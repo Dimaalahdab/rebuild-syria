@@ -1,6 +1,6 @@
 # Rebuild Syria
 
-Arabic RTL community reporting and safe-volunteering demo. See README.md for operation, API, testing, and publishing instructions.
+Arabic-default bilingual community reporting and safe-volunteering demo (Arabic RTL, English LTR). See README.md for operation, API, testing, and publishing instructions.
 
 ## Run & Operate
 
@@ -41,6 +41,8 @@ Profiles, image reports, real Gemma analysis, safe volunteer projects, recommend
 - Use SQLite persistence, not PostgreSQL; do not replace the database without permission.
 - Demo identity only: no email, phone, passwords, or real authentication.
 - Arabic-first, mobile-first, RTL; use Arabic skill labels with canonical English skill values.
+- English support must preserve Arabic as the default. Persist the chosen interface language, localize every product screen, and never rewrite saved report text when toggling languages.
+- Send the selected language to both Gemma routes. Keep categories and skills in English internally; translate labels only for display.
 - Never open hazardous road, building, electrical, or ordnance work for volunteers.
 - AI neither approves projects nor enrolls people. Its safety notes are not professional certification.
 

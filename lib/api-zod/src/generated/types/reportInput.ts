@@ -5,9 +5,11 @@
  * Rebuild Syria API
  * OpenAPI spec version: 0.1.0
  */
+import type { ReportInputLanguage } from './reportInputLanguage';
 
 export interface ReportInput {
   authorId?: string;
+  language?: ReportInputLanguage;
   /** @minLength 1 */
   city: string;
   /** @minLength 1 */

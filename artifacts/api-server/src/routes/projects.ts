@@ -176,6 +176,7 @@ router.post("/match-volunteers", gemmaRateLimit, async (req, res): Promise<void>
         requiredSkills,
       },
       ranked.map(({ userId, city, skills }) => ({ userId, city, skills })),
+      input.data.language ?? "ar",
     );
     const recommendations = result.recommendations.slice(0, 3).map((recommendation) => {
       const volunteer = ranked.find((item) => item.userId === recommendation.userId);
@@ -201,11 +202,17 @@ router.post("/match-volunteers", gemmaRateLimit, async (req, res): Promise<void>
       userId,
       city,
       skills,
-      reason: sameCity && overlap
-        ? "في المدينة نفسها ولديه مهارات مطلوبة للمشروع."
-        : sameCity
-          ? "في المدينة نفسها ويمكنه المشاركة محلياً."
-          : "يمتلك مهارات تتوافق مع احتياجات المشروع.",
+      reason: input.data.language === "en"
+        ? sameCity && overlap
+          ? "In the same city and has skills required for this project."
+          : sameCity
+            ? "In the same city and can take part locally."
+            : "Has skills that match the needs of this project."
+        : sameCity && overlap
+          ? "في المدينة نفسها ولديه مهارات مطلوبة للمشروع."
+          : sameCity
+            ? "في المدينة نفسها ويمكنه المشاركة محلياً."
+            : "يمتلك مهارات تتوافق مع احتياجات المشروع.",
     }));
     res.json(
       MatchVolunteersResponse.parse({

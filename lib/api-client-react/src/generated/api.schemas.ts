@@ -94,8 +94,22 @@ export interface ImpactSummary {
   badges: string[];
 }
 
+/**
+ * Original report content language; never changed by interface toggles
+ */
+export type ReportLanguage = typeof ReportLanguage[keyof typeof ReportLanguage];
+
+
+export const ReportLanguage = {
+  ar: 'ar',
+  en: 'en',
+} as const;
+
 export interface Report {
   id: string;
+  /** Original report content language; never changed by interface toggles */
+  language?: ReportLanguage;
+  isDemo?: boolean;
   /** @nullable */
   authorId: string | null;
   city: string;
@@ -111,8 +125,17 @@ export interface Report {
   createdAt: string;
 }
 
+export type ReportInputLanguage = typeof ReportInputLanguage[keyof typeof ReportInputLanguage];
+
+
+export const ReportInputLanguage = {
+  ar: 'ar',
+  en: 'en',
+} as const;
+
 export interface ReportInput {
   authorId?: string;
+  language?: ReportInputLanguage;
   /** @minLength 1 */
   city: string;
   /** @minLength 1 */
@@ -123,8 +146,17 @@ export interface ReportInput {
   analysisJson?: string;
 }
 
+export type AnalyzeIssueInputLanguage = typeof AnalyzeIssueInputLanguage[keyof typeof AnalyzeIssueInputLanguage];
+
+
+export const AnalyzeIssueInputLanguage = {
+  ar: 'ar',
+  en: 'en',
+} as const;
+
 export interface AnalyzeIssueInput {
   image: Blob | File;
+  language?: AnalyzeIssueInputLanguage;
   /** @minLength 1 */
   city: string;
   /** @minLength 1 */
@@ -184,6 +216,7 @@ export const ProjectStatus = {
 
 export interface Project {
   id: string;
+  isDemo?: boolean;
   /** @nullable */
   reportId: string | null;
   title: string;
@@ -227,8 +260,17 @@ export interface ProjectJoinResult {
   membershipId: string;
 }
 
+export type MatchVolunteersInputLanguage = typeof MatchVolunteersInputLanguage[keyof typeof MatchVolunteersInputLanguage];
+
+
+export const MatchVolunteersInputLanguage = {
+  ar: 'ar',
+  en: 'en',
+} as const;
+
 export interface MatchVolunteersInput {
   projectId: string;
+  language?: MatchVolunteersInputLanguage;
 }
 
 export interface VolunteerRecommendation {
@@ -263,6 +305,7 @@ export const MembershipStatus = {
 
 export interface Membership {
   id: string;
+  isDemo?: boolean;
   projectId: string;
   projectTitle: string;
   userId: string;

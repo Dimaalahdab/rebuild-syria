@@ -52,6 +52,7 @@ router.post("/analyze-issue", gemmaRateLimit, handleImageUpload, async (req, res
     city: req.body.city,
     neighborhood: req.body.neighborhood,
     description: req.body.description,
+    language: req.body.language,
   });
   if (!input.success) {
     res.status(400).json({ error: input.error.message });
@@ -65,6 +66,7 @@ router.post("/analyze-issue", gemmaRateLimit, handleImageUpload, async (req, res
       input.data.description,
       input.data.city,
       input.data.neighborhood,
+      input.data.language ?? "ar",
     );
     res.json(AnalyzeIssueResponse.parse(result));
   } catch (error) {

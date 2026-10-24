@@ -9,6 +9,7 @@ import type { MembershipStatus } from './membershipStatus';
 
 export interface Membership {
   id: string;
+  isDemo?: boolean;
   projectId: string;
   projectTitle: string;
   userId: string;

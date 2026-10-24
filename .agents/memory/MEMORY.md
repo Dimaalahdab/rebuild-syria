@@ -1,1 +1,2 @@
 - [Gemma output budgeting](gemma-output-budget.md) — short generation checks need minimal thinking and enough output tokens; model availability alone is not success.
+- [Workspace test boundary](source-export-test-boundary.md) — source-exporting workspace packages need bundled test dependencies, not assumptions about root hoisting.

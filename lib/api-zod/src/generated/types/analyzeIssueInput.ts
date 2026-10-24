@@ -5,9 +5,11 @@
  * Rebuild Syria API
  * OpenAPI spec version: 0.1.0
  */
+import type { AnalyzeIssueInputLanguage } from './analyzeIssueInputLanguage';
 
 export interface AnalyzeIssueInput {
   image: Blob | File;
+  language?: AnalyzeIssueInputLanguage;
   /** @minLength 1 */
   city: string;
   /** @minLength 1 */

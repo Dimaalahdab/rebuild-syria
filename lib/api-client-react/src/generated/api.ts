@@ -878,6 +878,9 @@ export const createReport = async (reportInput: ReportInput, options?: Parameter
 if(reportInput.authorId !== undefined) {
  formData.append(`authorId`, reportInput.authorId);
  }
+if(reportInput.language !== undefined) {
+ formData.append(`language`, reportInput.language);
+ }
 formData.append(`city`, reportInput.city);
 formData.append(`neighborhood`, reportInput.neighborhood);
 formData.append(`description`, reportInput.description);
@@ -1040,6 +1043,9 @@ export const getAnalyzeIssueUrl = () => {
 export const analyzeIssue = async (analyzeIssueInput: AnalyzeIssueInput, options?: Parameters<typeof customFetch>[1]): Promise<IssueAnalysisResponse> => {
     const formData = new FormData();
 formData.append(`image`, analyzeIssueInput.image);
+if(analyzeIssueInput.language !== undefined) {
+ formData.append(`language`, analyzeIssueInput.language);
+ }
 formData.append(`city`, analyzeIssueInput.city);
 formData.append(`neighborhood`, analyzeIssueInput.neighborhood);
 formData.append(`description`, analyzeIssueInput.description);

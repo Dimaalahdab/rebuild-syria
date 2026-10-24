@@ -1,14 +1,19 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useParams, Link } from 'wouter';
 import { useQueryClient } from '@tanstack/react-query';
 import { getGetProjectQueryKey, getGetProjectsQueryKey, getGetUserProjectsQueryKey, useGetProject, useJoinProject, useMatchVolunteers } from '@workspace/api-client-react';
-import { ArrowRight, MapPin, SearchCheck, ShieldCheck, UsersRound } from 'lucide-react';
+import type { VolunteerRecommendation } from '@workspace/api-client-react';
+import { MapPin, SearchCheck, ShieldCheck, UsersRound } from 'lucide-react';
 import { LoadState, PageFrame, PlatformShell } from '@/components/platform-shell';
+import { ArrowBack } from '@/components/i18n-ui';
 import { readDemoProfile } from '@/lib/demo-profile';
 import { canJoinProject } from '@/lib/safety';
+import { isDemoRecord } from '@/lib/demo';
+import { useI18n, type TKey } from '@/i18n';
 
-type Recommendation = { userId:string; city:string; skills:string[]; reason:string };
+type Notice = { key: TKey; tone: 'ok'|'err'|'warn' } | { error: unknown; tone: 'err' } | null;
 export default function ProjectDetailPage() {
+  const { t, label, language, errorMessage, errorDetails } = useI18n();
   const {id=''}=useParams<{id:string}>();
   const qc=useQueryClient();
   const profile=readDemoProfile();
@@ -20,29 +25,38 @@ export default function ProjectDetailPage() {
   });
   const join=useJoinProject();
   const match=useMatchVolunteers();
-  const [notice,setNotice]=useState('');
-  const [matchError,setMatchError]=useState('');
-  const [recommendations,setRecommendations]=useState<Recommendation[]|null>(null);
+  const [notice,setNotice]=useState<Notice>(null);
+  const [matchError,setMatchError]=useState<unknown>(null);
+  const [recommendations,setRecommendations]=useState<VolunteerRecommendation[]|null>(null);
   const [matchingSource,setMatchingSource]=useState<'gemma'|'fallback'>();
+  const resetMatch=match.reset;
+  const currentRequest=useRef('');
+  currentRequest.current=JSON.stringify([language,id]);
+  // AI reasons are generated in one language: drop them when the UI language changes.
+  useEffect(()=>{setRecommendations(null);setMatchingSource(undefined);setMatchError(null);resetMatch();},[language,id,resetMatch]);
   const project=query.data;
   const allowed=!!project&&canJoinProject(project);
   function joinProject() {
-    setNotice('');
-    if (!profile) {setNotice('أنشئ ملفك الشخصي أولاً. ستُستخدم هويتك التجريبية المحفوظة على هذا الجهاز.');return;}
+    setNotice(null);
+    if (!profile) {setNotice({key:'project.needProfile',tone:'warn'});return;}
     if (!project||!allowed||project.joinedByUser||project.joinedCount>=project.volunteerLimit) return;
-    join.mutate({id,data:{userId:profile.id}},{onSuccess:()=>{setNotice('تم تسجيل انضمامك لهذا المشروع.');void qc.invalidateQueries({queryKey:projectKey});void qc.invalidateQueries({queryKey:[...getGetProjectsQueryKey(),demoUserId]});void qc.invalidateQueries({queryKey:getGetUserProjectsQueryKey(profile.id)});},onError:e=>{const text=e instanceof Error?e.message:'';setNotice(/duplicate|already|مسبق|منضم/i.test(text)?'أنت مسجل مسبقاً في هذا المشروع.':/full|limit|مكتمل|ممتلئ/i.test(text)?'اكتمل عدد المشاركين المتاح.':text||'تعذر الانضمام. حاول مجدداً.') }});
+    join.mutate({id,data:{userId:profile.id}},{onSuccess:()=>{setNotice({key:'project.joinSuccess',tone:'ok'});void qc.invalidateQueries({queryKey:projectKey});void qc.invalidateQueries({queryKey:[...getGetProjectsQueryKey(),demoUserId]});void qc.invalidateQueries({queryKey:getGetUserProjectsQueryKey(profile.id)});},onError:e=>setNotice({error:e,tone:'err'})});
   }
   function requestRecommendations() {
     if (!project||!allowed) return;
-    setMatchError('');
-    match.mutate({data:{projectId:project.id}},{onSuccess:result=>{setRecommendations(result.recommendations);setMatchingSource(result.source);},onError:e=>setMatchError(e instanceof Error?e.message:'تعذر تحميل اقتراحات المتطوعين')});
+    setMatchError(null);
+    const data={projectId:project.id,language};
+    const requestKey=currentRequest.current;
+    match.mutate({data},{onSuccess:result=>{if(currentRequest.current!==requestKey)return;setRecommendations(result.recommendations);setMatchingSource(result.source);},onError:e=>{if(currentRequest.current===requestKey)setMatchError(e);}});
   }
-  return <PlatformShell><PageFrame eyebrow="مشروع مجتمعي" title={project?.title||'تفاصيل المشروع'} intro="راجع تفاصيل المهمة ومتطلبات السلامة قبل الانضمام."><LoadState loading={query.isLoading} error={query.isError} retry={()=>void query.refetch()}>{project&&<article className="surface form-surface"><Link href="/projects" className="text-action no-underline"><ArrowRight size={16}/> كل المشاريع</Link><div className="flex gap-2 mt-5">{allowed?<span className="tag">مفتوح وآمن</span>:<span className="tag tag-gold">{project.status}</span>}<span className="tag"><ShieldCheck size={14} className="ml-1"/>مراجعة السلامة</span></div><h2 className="text-2xl font-extrabold text-[#203b28] mt-4">{project.title}</h2><p className="leading-8 text-[#58685b]">{project.description}</p><p className="text-[#718074]"><MapPin size={16} className="inline ml-1"/>{project.city} · {project.neighborhood}</p><div className="data-meta"><span><UsersRound size={14} className="inline ml-1"/>{project.joinedCount} من {project.volunteerLimit} مشارك</span></div><div className="bar-track mt-3"><div className="bar-fill" style={{width:`${Math.min(100,project.joinedCount/project.volunteerLimit*100)}%`}}/></div><div className="profile-skills mt-5">{project.requiredSkills.map(s=><span key={s} className="tag">{s}</span>)}</div>
-    {project.id.startsWith('project-demo-')&&<span className="tag tag-gold mt-4">بيانات تجريبية</span>}
-    {matchingSource&&<div className="notice mt-4">{matchingSource==='fallback'?'ترتيب بديل بدون ذكاء اصطناعي':'ترشيحات Gemma — للمراجعة فقط'}</div>}
-    {!allowed&&<div className="notice mt-5">هذا المشروع غير متاح للانضمام. المشاريع التي تتضمن أعمال طرق أو مبانٍ أو كهرباء أو مخاطر لا تُعرض كفرص تطوعية.</div>}
-    {allowed&&<><div className="mt-6"><button className="action-primary" disabled={join.isPending||project.joinedByUser||project.joinedCount>=project.volunteerLimit} onClick={joinProject}>{join.isPending?'جارٍ التسجيل…':project.joinedByUser?'أنت منضم بالفعل':project.joinedCount>=project.volunteerLimit?'اكتمل العدد':'انضم للمشروع'}</button><p className="field-hint mt-2">الانضمام يستخدم ملفك التجريبي المحفوظ محلياً؛ لا توجد حسابات دخول فعلية في هذه النسخة.</p></div>
-      <section className="mt-6 border-t border-[#e9eee5] pt-5"><h3 className="font-extrabold text-[#244a30]">ترشيحات للمراجعة</h3><p className="field-hint">الاقتراحات تساعد على التواصل فقط؛ لا تسجّل أو تضم أي متطوع تلقائياً.</p><button className="action-secondary mt-2" disabled={match.isPending} onClick={requestRecommendations}><SearchCheck size={16}/>{match.isPending?'جارٍ إعداد الترشيحات…':'اقتراح متطوعين مناسبين'}</button>{matchError&&<div role="alert" className="notice notice-error mt-3">{matchError}</div>}{recommendations&&<div className="mt-4 space-y-3">{recommendations.length?recommendations.map(person=><div key={person.userId} className="notice notice-green"><b>{person.userId}</b><span className="status-text"> · {person.city}</span><p className="m-0 mt-1">{person.reason}</p><div className="profile-skills mt-2">{person.skills.map(skill=><span className="tag" key={skill}>{skill}</span>)}</div></div>):<p className="status-text">لا توجد ترشيحات لهذا المشروع.</p>}</div>}</section></>}
-    {notice&&<div role="status" className={`notice mt-4 ${notice.includes('تعذر')?'notice-error':'notice-green'}`}>{notice}{notice.includes('أنشئ')&&<Link href="/profile" className="mr-2 underline font-bold">إنشاء ملف</Link>}</div>}
+  const noticeText=notice?('key' in notice?t(notice.key):errorMessage(notice.error,'project.joinFailed')):'';
+  const details=matchError?errorDetails(matchError):'';
+  return <PlatformShell><PageFrame eyebrow={t('project.eyebrow')} title={project?.title||t('project.titleFallback')} intro={t('project.intro')}><LoadState loading={query.isLoading} error={query.isError} retry={()=>void query.refetch()}>{project&&<article className="surface form-surface"><Link href="/projects" className="text-action no-underline"><ArrowBack size={16}/> {t('project.back')}</Link><div className="flex flex-wrap gap-2 mt-5">{allowed?<span className="tag">{t('project.openSafe')}</span>:<span className="tag tag-gold">{label(project.status)}</span>}<span className="tag"><ShieldCheck size={14} className="me-1"/>{t('project.safetyReview')}</span></div><h2 dir="auto" className="text-2xl font-extrabold text-[#203b28] mt-4 text-start">{project.title}</h2><p dir="auto" className="leading-8 text-[#58685b] text-start">{project.description}</p><p className="text-[#718074]"><MapPin size={16} className="inline me-1"/>{label(project.city)} · <span dir="auto">{project.neighborhood}</span></p><div className="data-meta"><span><UsersRound size={14} className="inline me-1"/>{t('project.participantsOf',{joined:project.joinedCount,limit:project.volunteerLimit})}</span></div><div className="bar-track mt-3"><div className="bar-fill" style={{width:`${Math.min(100,project.joinedCount/project.volunteerLimit*100)}%`}}/></div><div className="profile-skills mt-5">{project.requiredSkills.map(s=><span key={s} className="tag">{label(s)}</span>)}</div>
+    {isDemoRecord(project)&&<span className="tag tag-gold mt-4">{t('ui.demoData')}</span>}
+    {matchingSource&&<div className="notice mt-4">{matchingSource==='fallback'?t('project.matchFallback'):t('project.matchGemma')}</div>}
+    {!allowed&&<div className="notice mt-5">{t('project.notJoinable')}</div>}
+    {allowed&&<><div className="mt-6"><button className="action-primary" disabled={join.isPending||project.joinedByUser||project.joinedCount>=project.volunteerLimit} onClick={joinProject}>{join.isPending?t('project.joining'):project.joinedByUser?t('project.joinedAlready'):project.joinedCount>=project.volunteerLimit?t('project.full'):t('project.join')}</button><p className="field-hint mt-2">{t('project.joinHint')}</p></div>
+      <section className="mt-6 border-t border-[#e9eee5] pt-5"><h3 className="font-extrabold text-[#244a30]">{t('project.match.title')}</h3><p className="field-hint">{t('project.match.hint')}</p><button className="action-secondary mt-2" disabled={match.isPending} onClick={requestRecommendations}><SearchCheck size={16}/>{match.isPending?t('project.match.loading'):t('project.match.button')}</button>{!!matchError&&<div role="alert" className="notice notice-error mt-3">{errorMessage(matchError,'project.match.failed')}{details&&<details className="mt-2"><summary>{t('ui.technicalDetails')}</summary><code dir="ltr" className="block text-start">{details}</code></details>}</div>}{recommendations&&<div className="mt-4 space-y-3">{recommendations.length?recommendations.map(person=><div key={person.userId} className="notice notice-green"><b dir="ltr">{person.userId}</b><span className="status-text"> · {label(person.city)}</span><p dir="auto" className="m-0 mt-1 text-start">{person.reason}</p><div className="profile-skills mt-2">{person.skills.map(skill=><span className="tag" key={skill}>{label(skill)}</span>)}</div></div>):<p className="status-text">{t('project.match.empty')}</p>}</div>}</section></>}
+    {notice&&<div role="status" className={`notice mt-4 ${notice.tone==='ok'?'notice-green':notice.tone==='err'?'notice-error':''}`}>{noticeText}{'key' in notice&&notice.key==='project.needProfile'&&<Link href="/profile" className="ms-2 underline font-bold">{t('project.createProfile')}</Link>}</div>}
   </article>}</LoadState></PageFrame></PlatformShell>;
 }

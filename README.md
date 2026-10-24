@@ -4,6 +4,31 @@ Arabic-first, mobile-friendly demo for reporting neighborhood issues, analyzing
 uploaded images with Gemma 4, reviewing safe projects, joining as a volunteer,
 and recording admin-confirmed impact.
 
+## Arabic and English
+
+Arabic is the default, including for first-time visitors regardless of browser
+language. Choose **عربي / English** in the desktop top bar or on **حسابي / My account**
+on mobile. The choice is saved in localStorage (`rebuild-syria-language`).
+Arabic uses `lang="ar" dir="rtl"`; English uses `lang="en" dir="ltr"`.
+
+All product interface copy lives in `artifacts/rebuild-syria/src/i18n/ar.ts` and
+`en.ts`, including validation, empty/error states, accessibility labels, metadata
+and AI disclaimers. Canonical category/skill/status/role values are translated
+only for display. Canonical city values retain their existing storage values.
+
+Both AI routes accept `language: "ar" | "en"` (default `"ar"`): multipart for
+`/api/analyze-issue`, JSON for `/api/match-volunteers`. New report saves also
+record their content language. Switching the interface never translates or
+rewrites saved reports, project descriptions, or original AI text.
+Unsaved AI results are cleared on language/input changes, and late responses
+for a previous language are ignored. Seeded records are labelled **Demo data**
+or **بيانات تجريبية**, without overwriting their original saved descriptions.
+
+Before this work, the working code was tagged
+`checkpoint-before-english-2026-10-24`. A SQLite backup is retained locally in
+the ignored `artifacts/api-server/data/checkpoints/before-english-support.db`.
+These local backups are not a published-app durability guarantee.
+
 ## Run
 
 ```sh
@@ -86,6 +111,22 @@ Set appropriate provider-side quota limits as well.
 
 ## Verification performed
 
+- Browser checks passed across ten routes in Arabic and English at 390×844 and
+  1440×1000, with no detected horizontal overflow or clipped actionable text.
+  Authenticated admin sections were also checked in all four combinations.
+- Browser request interception verified both AI request languages and rendering
+  against the real responses below. Delayed prior-language analysis and matching
+  responses were ignored. An English report remained unchanged after switching
+  to Arabic, with its stored language still `en`.
+- An initial admin wrong-PIN loading delay was fixed by disabling retries for
+  the PIN check; localized error and successful PIN paths then passed.
+- Four real Gemma calls passed: photo analysis and matching in both Arabic and
+  English, using `gemma-4-26b-a4b-it`. Matching returned `source: gemma`, not fallback.
+- Every report from the pre-language-change SQLite backup retained identical
+  title, description, city, neighborhood and photo association after migration.
+- New bilingual contract tests passed for Arabic defaults, both explicit
+  languages, unsupported-language rejection, unchanged legacy content, content
+  language metadata, demo markers and English-only canonical skill identifiers.
 - Guest browser check passed: one tap starts without a form; reload preserves
   identity; a second visit reuses the same profile.
 - Both preexisting folder photos migrated with identical SHA-256 checksums.
@@ -126,9 +167,8 @@ test was performed, and permanent local-disk persistence is not claimed.
 pnpm --filter @workspace/api-spec run codegen
 pnpm run typecheck
 PORT=3000 BASE_PATH=/ pnpm --filter @workspace/rebuild-syria run build
-# Isolated storage, rate-window and seed regression checks (temporary database):
-pnpm --filter @workspace/api-server exec esbuild test/judge-readiness.ts --bundle --platform=node --format=esm --packages=external --outfile=dist/judge-readiness-test.mjs
-node artifacts/api-server/dist/judge-readiness-test.mjs
+# Isolated storage, rate-window, seed and bilingual-contract regression checks:
+pnpm --filter @workspace/api-server test
 ```
 
 The SDK is `@google/genai`. The requested model is `gemma-4-26b-a4b-it`;

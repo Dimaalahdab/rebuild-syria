@@ -293,7 +293,7 @@ paths:
               $ref: "#/components/schemas/AnalyzeIssueInput"
       responses:
         "200":
-          description: Arabic analysis
+          description: Analysis in the requested interface language
           content:
             application/json:
               schema:
@@ -681,6 +681,8 @@ components:
       type: object
       properties:
         id: { type: string }
+        language: { type: string, enum: [ar, en], description: Original report content language; never changed by interface toggles }
+        isDemo: { type: boolean }
         authorId: { type: [string, "null"] }
         city: { type: string }
         neighborhood: { type: string }
@@ -695,6 +697,7 @@ components:
       type: object
       properties:
         authorId: { type: string }
+        language: { type: string, enum: [ar, en], default: ar }
         city: { type: string, minLength: 1 }
         neighborhood: { type: string, minLength: 1 }
         description: { type: string, minLength: 1 }
@@ -705,6 +708,7 @@ components:
       type: object
       properties:
         image: { type: string, format: binary }
+        language: { type: string, enum: [ar, en], default: ar }
         city: { type: string, minLength: 1 }
         neighborhood: { type: string, minLength: 1 }
         description: { type: string, minLength: 1 }
@@ -732,6 +736,7 @@ components:
       type: object
       properties:
         id: { type: string }
+        isDemo: { type: boolean }
         reportId: { type: [string, "null"] }
         title: { type: string }
         city: { type: string }
@@ -769,6 +774,7 @@ components:
       type: object
       properties:
         projectId: { type: string }
+        language: { type: string, enum: [ar, en], default: ar }
       required: [projectId]
     VolunteerRecommendation:
       type: object
@@ -791,6 +797,7 @@ components:
       type: object
       properties:
         id: { type: string }
+        isDemo: { type: boolean }
         projectId: { type: string }
         projectTitle: { type: string }
         userId: { type: string }

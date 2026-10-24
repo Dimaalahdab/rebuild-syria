@@ -14,27 +14,10 @@ import {
   UpdateUserResponse,
 } from "@workspace/api-zod";
 import { sqlite } from "../lib/sqlite";
+import { validSkills } from "../lib/skills";
 import { projectRecord, userRecord } from "../lib/records";
 
 const router: IRouter = Router();
-const allowedSkills = new Set([
-  "Cleaning",
-  "Painting",
-  "Gardening",
-  "Organization",
-  "Transportation",
-  "Engineering",
-  "Electrical",
-  "Construction",
-  "Photography",
-  "Design",
-  "Other",
-]);
-
-function validSkills(skills: string[]): boolean {
-  return skills.length <= 11 && skills.every((skill) => allowedSkills.has(skill));
-}
-
 router.post("/users", (req, res): void => {
   const input = CreateUserBody.safeParse(req.body);
   if (!input.success) {

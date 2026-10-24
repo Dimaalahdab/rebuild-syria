@@ -145,6 +145,7 @@ export const GetUserProjectsParams = zod.object({
 
 export const GetUserProjectsResponseItem = zod.object({
   "id": zod.string(),
+  "isDemo": zod.boolean().optional(),
   "reportId": zod.string().nullable(),
   "title": zod.string(),
   "city": zod.string(),
@@ -165,6 +166,8 @@ export const GetUserProjectsResponse = zod.array(GetUserProjectsResponseItem)
  */
 export const GetReportsResponseItem = zod.object({
   "id": zod.string(),
+  "language": zod.enum(['ar', 'en']).optional().describe('Original report content language; never changed by interface toggles'),
+  "isDemo": zod.boolean().optional(),
   "authorId": zod.string().nullable(),
   "city": zod.string(),
   "neighborhood": zod.string(),
@@ -181,13 +184,14 @@ export const GetReportsResponse = zod.array(GetReportsResponseItem)
 /**
  * @summary Save a neighborhood report
  */
-
+export const createReportBodyLanguageDefault = `ar`;
 
 
 
 
 export const CreateReportBody = zod.object({
   "authorId": zod.string().optional(),
+  "language": zod.enum(['ar', 'en']).default(createReportBodyLanguageDefault),
   "city": zod.string().min(1),
   "neighborhood": zod.string().min(1),
   "description": zod.string().min(1),
@@ -197,6 +201,8 @@ export const CreateReportBody = zod.object({
 
 export const CreateReportResponse = zod.object({
   "id": zod.string(),
+  "language": zod.enum(['ar', 'en']).optional().describe('Original report content language; never changed by interface toggles'),
+  "isDemo": zod.boolean().optional(),
   "authorId": zod.string().nullable(),
   "city": zod.string(),
   "neighborhood": zod.string(),
@@ -218,6 +224,8 @@ export const GetReportParams = zod.object({
 
 export const GetReportResponse = zod.object({
   "id": zod.string(),
+  "language": zod.enum(['ar', 'en']).optional().describe('Original report content language; never changed by interface toggles'),
+  "isDemo": zod.boolean().optional(),
   "authorId": zod.string().nullable(),
   "city": zod.string(),
   "neighborhood": zod.string(),
@@ -233,13 +241,14 @@ export const GetReportResponse = zod.object({
 /**
  * @summary Analyze a report photo with Gemma 4
  */
-
+export const analyzeIssueBodyLanguageDefault = `ar`;
 
 
 
 
 export const AnalyzeIssueBody = zod.object({
   "image": zod.instanceof(Blob),
+  "language": zod.enum(['ar', 'en']).default(analyzeIssueBodyLanguageDefault),
   "city": zod.string().min(1),
   "neighborhood": zod.string().min(1),
   "description": zod.string().min(1)
@@ -270,6 +279,7 @@ export const GetProjectsHeader = zod.object({
 
 export const GetProjectsResponseItem = zod.object({
   "id": zod.string(),
+  "isDemo": zod.boolean().optional(),
   "reportId": zod.string().nullable(),
   "title": zod.string(),
   "city": zod.string(),
@@ -298,6 +308,7 @@ export const GetProjectHeader = zod.object({
 
 export const GetProjectResponse = zod.object({
   "id": zod.string(),
+  "isDemo": zod.boolean().optional(),
   "reportId": zod.string().nullable(),
   "title": zod.string(),
   "city": zod.string(),
@@ -332,8 +343,11 @@ export const JoinProjectResponse = zod.object({
 /**
  * @summary Recommend suitable volunteers without enrolling them
  */
+export const matchVolunteersBodyLanguageDefault = `ar`;
+
 export const MatchVolunteersBody = zod.object({
-  "projectId": zod.string()
+  "projectId": zod.string(),
+  "language": zod.enum(['ar', 'en']).default(matchVolunteersBodyLanguageDefault)
 })
 
 export const MatchVolunteersResponse = zod.object({
@@ -358,6 +372,8 @@ export const GetAdminSummaryHeader = zod.object({
 export const GetAdminSummaryResponse = zod.object({
   "unverifiedReports": zod.array(zod.object({
   "id": zod.string(),
+  "language": zod.enum(['ar', 'en']).optional().describe('Original report content language; never changed by interface toggles'),
+  "isDemo": zod.boolean().optional(),
   "authorId": zod.string().nullable(),
   "city": zod.string(),
   "neighborhood": zod.string(),
@@ -370,6 +386,7 @@ export const GetAdminSummaryResponse = zod.object({
 })),
   "pendingProjects": zod.array(zod.object({
   "id": zod.string(),
+  "isDemo": zod.boolean().optional(),
   "reportId": zod.string().nullable(),
   "title": zod.string(),
   "city": zod.string(),
@@ -384,6 +401,7 @@ export const GetAdminSummaryResponse = zod.object({
 })),
   "joinedMemberships": zod.array(zod.object({
   "id": zod.string(),
+  "isDemo": zod.boolean().optional(),
   "projectId": zod.string(),
   "projectTitle": zod.string(),
   "userId": zod.string(),
@@ -407,6 +425,8 @@ export const VerifyReportHeader = zod.object({
 
 export const VerifyReportResponse = zod.object({
   "id": zod.string(),
+  "language": zod.enum(['ar', 'en']).optional().describe('Original report content language; never changed by interface toggles'),
+  "isDemo": zod.boolean().optional(),
   "authorId": zod.string().nullable(),
   "city": zod.string(),
   "neighborhood": zod.string(),
@@ -450,6 +470,7 @@ export const CreateProjectFromReportBody = zod.object({
 
 export const CreateProjectFromReportResponse = zod.object({
   "id": zod.string(),
+  "isDemo": zod.boolean().optional(),
   "reportId": zod.string().nullable(),
   "title": zod.string(),
   "city": zod.string(),
@@ -481,6 +502,7 @@ export const UpdateProjectStatusBody = zod.object({
 
 export const UpdateProjectStatusResponse = zod.object({
   "id": zod.string(),
+  "isDemo": zod.boolean().optional(),
   "reportId": zod.string().nullable(),
   "title": zod.string(),
   "city": zod.string(),
@@ -508,6 +530,7 @@ export const ConfirmParticipationHeader = zod.object({
 
 export const ConfirmParticipationResponse = zod.object({
   "id": zod.string(),
+  "isDemo": zod.boolean().optional(),
   "projectId": zod.string(),
   "projectTitle": zod.string(),
   "userId": zod.string(),

@@ -31,6 +31,10 @@ export function reportRecord(row: SqliteRow) {
   const imageId = row.image_id ? text(row, "image_id") : null;
   return {
     id: text(row, "id"),
+    isDemo: text(row, "id").startsWith("report-demo-"),
+    language: row.language === "en" || row.language === "ar"
+      ? row.language
+      : /[\u0600-\u06ff]/u.test(text(row, "description")) ? "ar" : "en",
     authorId: row.author_id ? text(row, "author_id") : null,
     city: text(row, "city"),
     neighborhood: text(row, "neighborhood"),
@@ -46,6 +50,7 @@ export function reportRecord(row: SqliteRow) {
 export function projectRecord(row: SqliteRow, joinedByUser = false) {
   return {
     id: text(row, "id"),
+    isDemo: text(row, "id").startsWith("project-demo-"),
     reportId: row.report_id ? text(row, "report_id") : null,
     title: text(row, "title"),
     city: text(row, "city"),
@@ -63,6 +68,7 @@ export function projectRecord(row: SqliteRow, joinedByUser = false) {
 export function membershipRecord(row: SqliteRow) {
   return {
     id: text(row, "id"),
+    isDemo: text(row, "id").startsWith("membership-demo-"),
     projectId: text(row, "project_id"),
     projectTitle: text(row, "project_title"),
     userId: text(row, "user_id"),

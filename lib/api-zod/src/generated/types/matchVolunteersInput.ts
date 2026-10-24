@@ -5,7 +5,9 @@
  * Rebuild Syria API
  * OpenAPI spec version: 0.1.0
  */
+import type { MatchVolunteersInputLanguage } from './matchVolunteersInputLanguage';
 
 export interface MatchVolunteersInput {
   projectId: string;
+  language?: MatchVolunteersInputLanguage;
 }

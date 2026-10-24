@@ -12,6 +12,7 @@ import { sqlite } from "../lib/sqlite";
 import { reportRecord } from "../lib/records";
 import { fileAsBlob, handleImageUpload, hasValidImageSignature } from "../lib/uploads";
 import { saveImage } from "../lib/images";
+import { validSkills } from "../lib/skills";
 
 const router: IRouter = Router();
 
@@ -52,7 +53,7 @@ router.post("/reports", handleImageUpload, async (req, res): Promise<void> => {
       return;
     }
     const parsed = AnalyzeIssueResponse.safeParse(candidate);
-    if (!parsed.success) {
+    if (!parsed.success || !validSkills(parsed.data.analysis.requiredSkills)) {
       res.status(400).json({ error: "The saved AI analysis is missing required fields." });
       return;
     }
@@ -73,8 +74,8 @@ router.post("/reports", handleImageUpload, async (req, res): Promise<void> => {
         typeof analysis?.analysis.category === "string" ? analysis.analysis.category : null;
       sqlite.prepare(`
         INSERT INTO reports
-          (id, author_id, city, neighborhood, description, image_id, category, title, status)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'new')
+          (id, author_id, city, neighborhood, description, image_id, category, title, language, status)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'new')
       `).run(
         id,
         authorId,
@@ -84,6 +85,7 @@ router.post("/reports", handleImageUpload, async (req, res): Promise<void> => {
         imageId,
         category,
         title,
+        input.data.language ?? "ar",
       );
       if (analysis) {
         sqlite.prepare(`

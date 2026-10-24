@@ -93,6 +93,10 @@ const reportColumns = sqlite.pragma("table_info(reports)") as Array<{ name: stri
 if (!reportColumns.some((column) => column.name === "image_id")) {
   sqlite.exec("ALTER TABLE reports ADD COLUMN image_id TEXT REFERENCES images(id)");
 }
+if (!reportColumns.some((column) => column.name === "language")) {
+  // Leave legacy records null: infer metadata from their unchanged original text.
+  sqlite.exec("ALTER TABLE reports ADD COLUMN language TEXT CHECK(language IN ('ar', 'en'))");
+}
 
 export const seedDemoData = sqlite.transaction(() => {
   // Only an empty product database gets fixtures. Never restore individual

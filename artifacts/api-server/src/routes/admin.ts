@@ -20,6 +20,7 @@ import {
 } from "@workspace/api-zod";
 import { sqlite } from "../lib/sqlite";
 import { membershipRecord, projectRecord, reportRecord } from "../lib/records";
+import { validSkills } from "../lib/skills";
 
 const router: IRouter = Router();
 
@@ -164,6 +165,10 @@ router.post("/admin/reports/:id/project", requireAdmin, (req, res): void => {
   }
   if (!input.success) {
     res.status(400).json({ error: input.error.message });
+    return;
+  }
+  if (!validSkills(input.data.requiredSkills)) {
+    res.status(400).json({ error: "One or more selected skills are not supported." });
     return;
   }
   const report = sqlite.prepare("SELECT * FROM reports WHERE id = ?").get(params.data.id) as
