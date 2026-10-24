@@ -24,6 +24,39 @@ data/
 /artifacts/api-server/uploads/
 /screenshots/
 
+# Secrets and local credentials (keep only the placeholder .env.example above)
+.envrc
+.secrets/
+.credentials/
+credentials.json
+*service-account*.json
+*.pem
+*.key
+*.p12
+*.pfx
+*.keystore
+id_rsa
+id_ed25519
+
+# Runtime databases, journals, and exports; never commit real user data
+*.db
+*.db-*
+*.sqlite
+*.sqlite-*
+*.sqlite3
+*.sqlite3-*
+*.sqlitedb
+*.dump
+*.sql.gz
+backups/
+database-backups/
+
+# User-provided files and personal photos, at any workspace depth
+uploads/
+user-uploads/
+private-uploads/
+attached_assets/
+
 # IDEs and editors
 /.idea
 .project
