@@ -1,6 +1,7 @@
 import Database from "better-sqlite3";
 import { mkdirSync } from "node:fs";
 import { dirname, resolve } from "node:path";
+import { pilotCity } from "./pilot-city";
 
 const databasePath = resolve(process.cwd(), "data", "app.db");
 mkdirSync(dirname(databasePath), { recursive: true });
@@ -73,7 +74,7 @@ sqlite.exec(`
     id TEXT PRIMARY KEY,
     project_id TEXT NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
     user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    status TEXT NOT NULL DEFAULT 'joined',
+    status TEXT NOT NULL DEFAULT 'pending',
     created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     UNIQUE (project_id, user_id)
   );
@@ -98,6 +99,40 @@ if (!reportColumns.some((column) => column.name === "language")) {
   sqlite.exec("ALTER TABLE reports ADD COLUMN language TEXT CHECK(language IN ('ar', 'en'))");
 }
 
+const additions: Record<string, string[]> = {
+  reports: [
+    "assigned_to TEXT", "municipality_note TEXT", "scheduled_at TEXT",
+    "decided_at TEXT", "updated_at TEXT",
+  ],
+  projects: ["scheduled_at TEXT", "municipality_note TEXT"],
+  project_memberships: ["municipality_note TEXT", "updated_at TEXT"],
+  users: ["last_seen_change_id INTEGER NOT NULL DEFAULT 0"],
+};
+sqlite.transaction(() => {
+  for (const [table, definitions] of Object.entries(additions)) {
+    const columns = sqlite.pragma(`table_info(${table})`) as Array<{ name: string }>;
+    for (const definition of definitions) {
+      if (!columns.some((column) => column.name === definition.split(" ")[0])) {
+        sqlite.exec(`ALTER TABLE ${table} ADD COLUMN ${definition}`);
+      }
+    }
+  }
+  // Preserve existing participation, but new joins are applications, not enrollment.
+  sqlite.exec(`
+    UPDATE project_memberships SET status = 'accepted' WHERE status = 'joined';
+    UPDATE reports SET status = 'under_review' WHERE status = 'verified';
+    CREATE TABLE IF NOT EXISTS notification_changes (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+      kind TEXT NOT NULL,
+      source_id TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    );
+    CREATE INDEX IF NOT EXISTS notification_user_cursor ON notification_changes(user_id, id);
+    CREATE INDEX IF NOT EXISTS analysis_report_date ON ai_analyses(report_id, created_at);
+  `);
+})();
+
 export const seedDemoData = sqlite.transaction(() => {
   // Only an empty product database gets fixtures. Never restore individual
   // demo records that somebody has deliberately changed or removed.
@@ -106,12 +141,13 @@ export const seedDemoData = sqlite.transaction(() => {
     UNION ALL SELECT 1 FROM projects UNION ALL SELECT 1 FROM images LIMIT 1
   `).get();
   if (existingData) return;
+  const city = pilotCity.cityName;
 
   const users = [
-    ["volunteer-demo-1", "متطوع تجريبي ١", "volunteer", "دمشق", ["Cleaning", "Organization"]],
-    ["volunteer-demo-2", "متطوعة تجريبية ٢", "volunteer", "حلب", ["Gardening", "Painting"]],
-    ["volunteer-demo-3", "متطوع تجريبي ٣", "volunteer", "حمص", ["Transportation", "Photography"]],
-    ["volunteer-demo-4", "متطوعة تجريبية ٤", "volunteer", "اللاذقية", ["Design", "Engineering"]],
+    ["volunteer-demo-1", "متطوع تجريبي ١", "volunteer", city, ["Cleaning", "Organization"]],
+    ["volunteer-demo-2", "متطوعة تجريبية ٢", "volunteer", city, ["Gardening", "Painting"]],
+    ["volunteer-demo-3", "متطوع تجريبي ٣", "volunteer", city, ["Transportation", "Photography"]],
+    ["volunteer-demo-4", "متطوعة تجريبية ٤", "volunteer", city, ["Design", "Engineering"]],
   ] as const;
 
   const insertUser = sqlite.prepare(`
@@ -130,7 +166,7 @@ export const seedDemoData = sqlite.transaction(() => {
   insertReport.run(
     "report-demo-waste",
     "volunteer-demo-1",
-    "دمشق",
+    city,
     "المزة",
     "تراكم النفايات قرب الحديقة ويحتاج إلى تنظيم حملة تنظيف.",
     "Waste",
@@ -140,7 +176,7 @@ export const seedDemoData = sqlite.transaction(() => {
   insertReport.run(
     "report-demo-park",
     "volunteer-demo-2",
-    "حلب",
+    city,
     "الجميلية",
     "المساحة الخضراء مهملة وتحتاج إلى عناية وزراعة بسيطة.",
     "Public spaces",
@@ -150,7 +186,7 @@ export const seedDemoData = sqlite.transaction(() => {
   insertReport.run(
     "report-demo-road",
     "volunteer-demo-3",
-    "حمص",
+    city,
     "حي الإنشاءات",
     "حفرة في الطريق تحتاج إلى معاينة وإحالة إلى الجهات المختصة.",
     "Roads",
@@ -167,7 +203,7 @@ export const seedDemoData = sqlite.transaction(() => {
     "project-demo-cleanup",
     "report-demo-waste",
     "حملة تنظيف الحي",
-    "دمشق",
+    city,
     "المزة",
     "تنظيف المساحة العامة وفرز المخلفات غير الخطرة بالتنسيق مع الحي.",
     JSON.stringify(["Cleaning", "Organization"]),
@@ -177,7 +213,7 @@ export const seedDemoData = sqlite.transaction(() => {
     "project-demo-park",
     "report-demo-park",
     "مساحة خضراء لكل حي",
-    "حلب",
+    city,
     "الجميلية",
     "زراعة نباتات محلية وترتيب الحديقة ضمن أنشطة آمنة ومجتمعية.",
     JSON.stringify(["Gardening", "Painting"]),
@@ -185,8 +221,8 @@ export const seedDemoData = sqlite.transaction(() => {
   );
 
   const insertMembership = sqlite.prepare(`
-    INSERT OR IGNORE INTO project_memberships (id, project_id, user_id)
-    VALUES (?, ?, ?)
+    INSERT OR IGNORE INTO project_memberships (id, project_id, user_id, status)
+    VALUES (?, ?, ?, 'accepted')
   `);
   insertMembership.run("membership-demo-1", "project-demo-cleanup", "volunteer-demo-1");
   insertMembership.run("membership-demo-2", "project-demo-park", "volunteer-demo-2");

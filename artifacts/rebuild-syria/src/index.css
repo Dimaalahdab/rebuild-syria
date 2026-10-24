@@ -309,3 +309,27 @@
 .hero .lang-toggle{background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.3)}
 @media(max-width:760px){.desktop-lang{display:none!important}.lang-toggle-mobile{display:inline-flex;margin-bottom:18px}.topbar .brand-text{max-width:60vw}}
 [dir="ltr"] .hero-title{letter-spacing:-.03em;line-height:1.08}
+
+/* municipality dashboard, status badges, AI labels */
+.ai-label{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:3px 9px;font-size:.68rem;font-weight:800;background:#eef0fb;color:#4a4f86;border:1px dashed #b9bde3;white-space:nowrap}
+.human-label{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:3px 9px;font-size:.68rem;font-weight:800;background:#e7f2e4;color:#1b6034;border:1px solid #bcd9b8;white-space:nowrap}
+.st-badge{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:5px 11px;font-size:.74rem;font-weight:800;background:#edf5ea;color:#23623a}
+.st-pending,.st-new,.st-under_review{background:#fff5da;color:#7b6632}
+.st-declined,.st-rejected{background:#fff0eb;color:#a2462b}
+.st-scheduled,.st-assigned_to_municipality,.st-referred{background:#e6f1f6;color:#245a72}
+.st-completed,.st-confirmed{background:#dff1e0;color:#14532d}
+.nav-dot{display:inline-flex;align-items:center;justify-content:center;min-width:17px;height:17px;padding:0 4px;border-radius:99px;background:#d9482b;color:#fff;font-size:.62rem;font-weight:800;line-height:1;margin-inline-start:5px}
+.mobile-bottom a,.mobile-nav a{position:relative}
+.mobile-bottom .nav-dot,.mobile-nav .nav-dot{position:absolute;top:-4px;inset-inline-end:calc(50% - 22px);margin:0}
+.dash-counters{display:grid;grid-template-columns:2fr 1fr 1fr;gap:14px}
+.dash-stat{padding:18px 20px}
+.dash-stat .v{font-size:1.9rem;font-weight:800;color:#166534;line-height:1.1}
+.dash-stat .c{font-size:.8rem;font-weight:700;color:#59685c;margin-top:6px}
+.status-chips{display:flex;flex-wrap:wrap;gap:8px}
+.dash-filters{display:grid;grid-template-columns:1fr 1fr auto;gap:12px;align-items:end}
+.analysis-box{border:1px dashed #b9bde3;background:#f7f8fe;border-radius:16px;padding:14px 16px;margin-top:14px;font-size:.86rem;line-height:1.8}
+.analysis-box dl{display:grid;grid-template-columns:max-content 1fr;gap:4px 14px;margin:10px 0 0}
+.analysis-box dt{font-weight:800;color:#3d4272}
+.analysis-box dd{margin:0}
+.decision-box{border:1px solid #bcd9b8;background:#f6fbf4;border-radius:16px;padding:16px;margin-top:14px}
+@media(max-width:760px){.dash-counters,.dash-filters{grid-template-columns:1fr}.analysis-box dl{grid-template-columns:1fr}}

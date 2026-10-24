@@ -5,6 +5,7 @@
  * Rebuild Syria API
  * OpenAPI spec version: 0.1.0
  */
+import type { ProjectApplicationStatus } from './projectApplicationStatus';
 import type { ProjectStatus } from './projectStatus';
 
 export interface Project {
@@ -22,4 +23,10 @@ export interface Project {
   isSafe: boolean;
   joinedCount: number;
   joinedByUser: boolean;
+  /** @nullable */
+  applicationStatus?: ProjectApplicationStatus;
+  /** @nullable */
+  scheduledAt?: Date | null;
+  /** @nullable */
+  municipalityNote?: string | null;
 }

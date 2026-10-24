@@ -8,6 +8,7 @@ import { analyzeIssue, safeProviderError, testGemmaConnection, REQUESTED_GEMMA_M
 import { fileAsBlob, handleImageUpload, hasValidImageSignature } from "../lib/uploads";
 import { logger } from "../lib/logger";
 import { gemmaRateLimit } from "../lib/gemma-rate-limit";
+import { pilotCity } from "../lib/pilot-city";
 
 const router: IRouter = Router();
 let nextDiagnosticTestAt = 0;
@@ -49,7 +50,7 @@ router.post("/analyze-issue", gemmaRateLimit, handleImageUpload, async (req, res
 
   const input = AnalyzeIssueBody.safeParse({
     image: fileAsBlob(file),
-    city: req.body.city,
+    city: pilotCity.cityName,
     neighborhood: req.body.neighborhood,
     description: req.body.description,
     language: req.body.language,

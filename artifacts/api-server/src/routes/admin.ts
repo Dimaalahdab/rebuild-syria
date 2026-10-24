@@ -1,5 +1,5 @@
-import { randomUUID, timingSafeEqual } from "node:crypto";
-import { Router, type IRouter, type NextFunction, type Request, type Response } from "express";
+import { randomUUID } from "node:crypto";
+import { Router, type IRouter } from "express";
 import {
   ConfirmParticipationHeader,
   ConfirmParticipationParams,
@@ -21,62 +21,11 @@ import {
 import { sqlite } from "../lib/sqlite";
 import { membershipRecord, projectRecord, reportRecord } from "../lib/records";
 import { validSkills } from "../lib/skills";
+import { requireAdmin } from "../lib/admin-auth";
+import { reportIsUnsafe } from "../lib/report-safety";
+import { confirmAttendance, notify, WorkflowError } from "../lib/municipality";
 
 const router: IRouter = Router();
-
-function requireAdmin(req: Request, res: Response, next: NextFunction): void {
-  const expected = process.env.ADMIN_PIN || "1234";
-  const supplied = req.get("X-Admin-Pin") ?? "";
-  const expectedBuffer = Buffer.from(expected);
-  const suppliedBuffer = Buffer.from(supplied);
-  const isValid =
-    expectedBuffer.length === suppliedBuffer.length &&
-    timingSafeEqual(expectedBuffer, suppliedBuffer);
-  if (!isValid) {
-    res.status(401).json({ error: "The demo admin PIN is incorrect." });
-    return;
-  }
-  next();
-}
-
-function reportIsUnsafe(report: Record<string, unknown>): boolean {
-  const category = String(report.category ?? "");
-  if (category === "Roads" || category === "Buildings") return true;
-  const text = `${String(report.title ?? "")} ${String(report.description ?? "")}`.toLowerCase();
-  const unsafeTerms = [
-    "road",
-    "pothole",
-    "building damage",
-    "electrical",
-    "power line",
-    "unexploded",
-    "ordnance",
-    " حفرة",
-    "طريق",
-    "مبنى متضرر",
-    "انهيار",
-    "كهرب",
-    "ذخائر",
-    "متفجر",
-    "أسلاك",
-  ];
-  if (unsafeTerms.some((term) => text.includes(term))) return true;
-
-  const analysisRow = sqlite.prepare(`
-    SELECT result_json FROM ai_analyses WHERE report_id = ?
-    ORDER BY created_at DESC LIMIT 1
-  `).get(String(report.id)) as Record<string, unknown> | undefined;
-  if (!analysisRow) return false;
-  try {
-    const analysis = JSON.parse(String(analysisRow.result_json)) as {
-      requiresProfessionalReview?: boolean;
-      safetyFlags?: unknown[];
-    };
-    return analysis.requiresProfessionalReview === true || (analysis.safetyFlags?.length ?? 0) > 0;
-  } catch {
-    return true;
-  }
-}
 
 router.get("/admin/summary", requireAdmin, (req, res): void => {
   const header = GetAdminSummaryHeader.safeParse({
@@ -92,7 +41,7 @@ router.get("/admin/summary", requireAdmin, (req, res): void => {
   `).all() as Record<string, unknown>[];
   const projects = sqlite.prepare(`
     SELECT p.*,
-      (SELECT COUNT(*) FROM project_memberships pm WHERE pm.project_id = p.id) AS joined_count,
+      (SELECT COUNT(*) FROM project_memberships pm WHERE pm.project_id = p.id AND pm.status IN ('accepted','confirmed')) AS joined_count,
       0 AS joined_by_user
     FROM projects p WHERE p.status = 'pending' ORDER BY p.created_at DESC
   `).all() as Record<string, unknown>[];
@@ -102,7 +51,7 @@ router.get("/admin/summary", requireAdmin, (req, res): void => {
     FROM project_memberships pm
     JOIN projects p ON p.id = pm.project_id
     JOIN users u ON u.id = pm.user_id
-    WHERE pm.status = 'joined'
+    WHERE pm.status = 'accepted'
     ORDER BY pm.created_at DESC
   `).all() as Record<string, unknown>[];
   res.json(
@@ -134,7 +83,8 @@ router.post("/admin/reports/:id/verify", requireAdmin, (req, res): void => {
   }
 
   const verify = sqlite.transaction(() => {
-    sqlite.prepare("UPDATE reports SET status = 'verified' WHERE id = ?").run(params.data.id);
+    sqlite.prepare("UPDATE reports SET status = 'under_review', updated_at = CURRENT_TIMESTAMP WHERE id = ?").run(params.data.id);
+    if (report.status !== "under_review") notify(report.author_id, "report", params.data.id);
     if (report.author_id) {
       const award = sqlite.prepare(`
         INSERT OR IGNORE INTO impact_events (id, user_id, event_type, source_id, points)
@@ -204,7 +154,7 @@ router.post("/admin/reports/:id/project", requireAdmin, (req, res): void => {
   );
   const row = sqlite.prepare(`
     SELECT p.*,
-      (SELECT COUNT(*) FROM project_memberships pm WHERE pm.project_id = p.id) AS joined_count,
+      (SELECT COUNT(*) FROM project_memberships pm WHERE pm.project_id = p.id AND pm.status IN ('accepted','confirmed')) AS joined_count,
       0 AS joined_by_user
     FROM projects p WHERE p.id = ?
   `).get(id) as Record<string, unknown>;
@@ -253,7 +203,7 @@ router.post("/admin/projects/:id/status", requireAdmin, (req, res): void => {
   sqlite.prepare("UPDATE projects SET status = ? WHERE id = ?").run(input.data.status, params.data.id);
   const updated = sqlite.prepare(`
     SELECT p.*,
-      (SELECT COUNT(*) FROM project_memberships pm WHERE pm.project_id = p.id) AS joined_count,
+      (SELECT COUNT(*) FROM project_memberships pm WHERE pm.project_id = p.id AND pm.status IN ('accepted','confirmed')) AS joined_count,
       0 AS joined_by_user
     FROM projects p WHERE p.id = ?
   `).get(params.data.id) as Record<string, unknown>;
@@ -271,36 +221,12 @@ router.post("/admin/memberships/:id/confirm", requireAdmin, (req, res): void => 
     res.status(400).json({ error: header.error.message });
     return;
   }
-  const membership = sqlite.prepare(`
-    SELECT pm.id, pm.project_id, p.title AS project_title, pm.user_id,
-      u.name AS user_name, u.city, pm.status
-    FROM project_memberships pm
-    JOIN projects p ON p.id = pm.project_id
-    JOIN users u ON u.id = pm.user_id
-    WHERE pm.id = ?
-  `).get(params.data.id) as Record<string, unknown> | undefined;
-  if (!membership) {
-    res.status(404).json({ error: "Participation record not found." });
-    return;
+  try {
+    res.json(ConfirmParticipationResponse.parse(confirmAttendance(params.data.id)));
+  } catch (error) {
+    if (error instanceof WorkflowError) res.status(error.status).json({ error: error.message });
+    else throw error;
   }
-
-  const confirm = sqlite.transaction(() => {
-    sqlite.prepare("UPDATE project_memberships SET status = 'confirmed' WHERE id = ?").run(params.data.id);
-    const award = sqlite.prepare(`
-      INSERT OR IGNORE INTO impact_events (id, user_id, event_type, source_id, points)
-      VALUES (?, ?, 'participation_confirmed', ?, 30)
-    `).run(randomUUID(), String(membership.user_id), params.data.id);
-    if (award.changes > 0) {
-      sqlite.prepare("UPDATE users SET points = points + 30, updated_at = CURRENT_TIMESTAMP WHERE id = ?")
-        .run(String(membership.user_id));
-    }
-  });
-  confirm();
-  const updated = {
-    ...membership,
-    status: "confirmed",
-  };
-  res.json(ConfirmParticipationResponse.parse(membershipRecord(updated)));
 });
 
 export default router;

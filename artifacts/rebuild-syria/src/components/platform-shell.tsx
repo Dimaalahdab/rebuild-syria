@@ -2,6 +2,7 @@ import { Link, useLocation } from 'wouter';
 import { CircleUserRound, FilePlus2, Home, ListChecks, Sprout, Trees } from 'lucide-react';
 import { useI18n, type TKey } from '@/i18n';
 import { LanguageToggle } from '@/components/i18n-ui';
+import { AccountBadge } from '@/components/account-badge';
 
 const nav: { href: string; key: TKey; icon: typeof Home }[] = [
   { href: '/', key: 'nav.home', icon: Home },
@@ -21,12 +22,12 @@ export function PlatformShell({ children }: { children: React.ReactNode }) {
           <span className="brand-mark"><Trees size={23}/></span>
           <span className="leading-tight brand-text"><b className="block text-[#183b25]">{t('brand.name')}</b><small className="text-[#718074]">{t('brand.tagline')}</small></span>
         </Link>
-        <nav className="site-nav" aria-label={t('nav.main')}>{nav.map(({href,key}) => <Link key={href} href={href} className={location === href ? 'active' : ''}>{t(key)}</Link>)}<Link href="/profile" className={location === '/profile' ? 'active' : ''}>{t('nav.profile')}</Link><Link href="/admin" className={location === '/admin' ? 'active' : ''}>{t('nav.admin')}</Link></nav>
+        <nav className="site-nav" aria-label={t('nav.main')}>{nav.map(({href,key}) => <Link key={href} href={href} className={location === href ? 'active' : ''}>{t(key)}{href === '/account' && <AccountBadge/>}</Link>)}<Link href="/profile" className={location === '/profile' ? 'active' : ''}>{t('nav.profile')}</Link><Link href="/admin" className={location === '/admin' ? 'active' : ''}>{t('nav.admin')}</Link></nav>
         <div className="topbar-actions"><LanguageToggle className="desktop-lang"/><Link href="/report" className="desktop-join button-primary !min-h-[42px] !px-4 !text-sm no-underline">{t('nav.addReport')} <FilePlus2 size={16}/></Link></div>
       </div>
     </header>
     {children}
-    <nav className="mobile-bottom" aria-label={t('nav.mobile')}>{nav.map(({href,key,icon:Icon}) => <Link key={href} href={href} className={location === href ? 'active' : ''}><Icon size={18}/><span>{t(key)}</span></Link>)}</nav>
+    <nav className="mobile-bottom" aria-label={t('nav.mobile')}>{nav.map(({href,key,icon:Icon}) => <Link key={href} href={href} className={location === href ? 'active' : ''}><Icon size={18}/><span>{t(key)}</span>{href === '/account' && <AccountBadge/>}</Link>)}</nav>
   </div>;
 }
 

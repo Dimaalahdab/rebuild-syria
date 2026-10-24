@@ -5,9 +5,9 @@ import { LoadState, PageFrame, PlatformShell } from '@/components/platform-shell
 import { canJoinProject, isSafeProject } from '@/lib/safety';
 import { readDemoProfile } from '@/lib/demo-profile';
 import { isDemoRecord } from '@/lib/demo';
-import { useI18n } from '@/i18n';
+import { useI18n, type TKey } from '@/i18n';
 export default function ProjectsPage() {
-  const { t, label } = useI18n();
+  const { t, label, fmtDateTime } = useI18n();
   const profile=readDemoProfile();
   const demoUserId=profile?.id??'';
   const query=useGetProjects({
@@ -26,7 +26,7 @@ export default function ProjectsPage() {
           <div className="flex justify-between gap-3"><span className="tag">{label(p.status)}</span>{isDemoRecord(p)&&<span className="tag tag-gold">{t('ui.demoData')}</span>}</div>
           <h2 dir="auto" className="text-start">{p.title}</h2><p dir="auto" className="text-start">{p.description}</p>
           <div className="data-meta"><span><MapPin size={14} className="inline me-1"/>{label(p.city)} · <span dir="auto">{p.neighborhood}</span></span><span><UsersRound size={14} className="inline me-1"/>{t('projects.participants',{joined:p.joinedCount,limit:p.volunteerLimit})}</span></div>
-          <div className="profile-skills mt-4">{p.requiredSkills.map(s=><span className="tag" key={s}>{label(s)}</span>)}</div>
+          {p.scheduledAt&&<p className="status-text mt-3" data-testid={`text-project-scheduled-${p.id}`}>{t('project.scheduled',{date:fmtDateTime(p.scheduledAt)})}</p>}{p.municipalityNote&&<p dir="auto" className="status-text mt-1 text-start">{t('project.note',{note:p.municipalityNote})}</p>}{p.applicationStatus&&<p className="mt-2"><span className={`st-badge st-${p.applicationStatus}`}>{t(('project.app.'+p.applicationStatus) as TKey)}</span></p>}<div className="profile-skills mt-4">{p.requiredSkills.map(s=><span className="tag" key={s}>{label(s)}</span>)}</div>
           <Link href={`/projects/${p.id}`} className="action-primary mt-4">{p.joinedByUser?t('projects.cta.joined'):canJoinProject(p)?t('projects.cta.join'):t('projects.cta.view')}</Link>
         </article>;
       })}</div>}

@@ -33,6 +33,16 @@ const SERVER_ERRORS: Record<string, Key> = {
   'This report involves a hazard and cannot become a volunteer project.': 'err.srv.reportHazard',
   'Unsafe work cannot be opened to volunteers.': 'err.srv.unsafeWork',
   'You have already joined this project.': 'err.srv.alreadyJoined',
+  'You have already applied to this project.': 'project.joinedAlready',
+  'This report requires professional review and cannot be accepted for volunteers.': 'dash.v.unsafe',
+  'A rejection reason is required.': 'dash.v.note',
+  'A date and time are required for this decision.': 'dash.v.when',
+  'Volunteer acceptance must be handled by volunteers.': 'dash.v.volunteerHandler',
+  'This outcome must be assigned to the municipality team.': 'dash.v.municipalityHandler',
+  'A referred report must be assigned to another authority.': 'dash.v.otherHandler',
+  'This application has already been decided.': 'err.municipal.alreadyDecided',
+  'Only accepted volunteers can have attendance confirmed.': 'err.municipal.acceptedOnly',
+  'Attendance cannot be confirmed for a cancelled project.': 'err.municipal.cancelled',
   'تم بلوغ حد ٢٠ طلب تحليل في الدقيقة. انتظر قليلاً ثم حاول مجدداً.': 'err.srv.aiRateLimit',
 };
 

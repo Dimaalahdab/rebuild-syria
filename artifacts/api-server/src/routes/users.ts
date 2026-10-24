@@ -113,10 +113,10 @@ router.get("/users/:id/impact", (req, res): void => {
     return;
   }
   const verifiedReports = Number(
-    (sqlite.prepare("SELECT COUNT(*) AS count FROM reports WHERE author_id = ? AND status = 'verified'").get(params.data.id) as Record<string, unknown>).count,
+    (sqlite.prepare("SELECT COUNT(*) AS count FROM impact_events WHERE user_id = ? AND event_type = 'report_verified'").get(params.data.id) as Record<string, unknown>).count,
   );
   const joinedProjects = Number(
-    (sqlite.prepare("SELECT COUNT(*) AS count FROM project_memberships WHERE user_id = ?").get(params.data.id) as Record<string, unknown>).count,
+    (sqlite.prepare("SELECT COUNT(*) AS count FROM project_memberships WHERE user_id = ? AND status IN ('accepted','confirmed')").get(params.data.id) as Record<string, unknown>).count,
   );
   const points = Number(user.points ?? 0);
   const badges: string[] = [];
@@ -139,7 +139,8 @@ router.get("/users/:id/projects", (req, res): void => {
   }
   const rows = sqlite.prepare(`
     SELECT p.*,
-      (SELECT COUNT(*) FROM project_memberships count_pm WHERE count_pm.project_id = p.id) AS joined_count,
+      (SELECT COUNT(*) FROM project_memberships count_pm WHERE count_pm.project_id = p.id AND count_pm.status IN ('accepted','confirmed')) AS joined_count,
+      pm.status AS application_status,
       1 AS joined_by_user
     FROM projects p
     JOIN project_memberships pm ON pm.project_id = p.id

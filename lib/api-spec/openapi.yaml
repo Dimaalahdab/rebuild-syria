@@ -623,6 +623,136 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ApiError"
+  /config:
+    get:
+      operationId: getAppConfig
+      tags: [municipality]
+      responses:
+        "200":
+          description: Public pilot city configuration, not an endorsement
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AppConfig" }
+  /admin/municipality:
+    get:
+      operationId: getMunicipalityDashboard
+      tags: [municipality]
+      parameters:
+        - { name: X-Admin-Pin, in: header, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: Priority-sorted inbox, applications and counters
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MunicipalityDashboard" }
+        "401":
+          description: Incorrect PIN
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ApiError" }
+  /admin/reports/{id}/decision:
+    post:
+      operationId: decideReport
+      tags: [municipality]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+        - { name: X-Admin-Pin, in: header, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ReportDecisionInput" }
+      responses:
+        "200":
+          description: Human decision saved; volunteer project created atomically when accepted
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Report" }
+        "400":
+          description: Invalid decision, missing rejection reason or unsafe volunteer work
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ApiError" }
+        "401":
+          description: Incorrect PIN
+        "404":
+          description: Report not found
+  /admin/memberships/{id}/decision:
+    post:
+      operationId: decideVolunteerApplication
+      tags: [municipality]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+        - { name: X-Admin-Pin, in: header, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ApplicationDecisionInput" }
+      responses:
+        "200":
+          description: Application accepted or declined by a person; no participation points awarded
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Membership" }
+        "400":
+          description: Invalid state
+        "401":
+          description: Incorrect PIN
+        "404":
+          description: Application not found
+        "409":
+          description: Full project or already decided application
+  /users/{id}/activity:
+    get:
+      operationId: getUserActivity
+      tags: [municipality]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: Demo user's own reports, applications and latest changes
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/UserActivity" }
+        "404":
+          description: Profile not found
+  /users/{id}/notifications:
+    get:
+      operationId: getUserNotifications
+      tags: [municipality]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: Unseen status changes for the demo profile
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/UserNotifications" }
+        "404":
+          description: Profile not found
+  /users/{id}/notifications/read:
+    post:
+      operationId: markNotificationsRead
+      tags: [municipality]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NotificationReadInput"
+      responses:
+        "200":
+          description: Acknowledges only changes actually displayed, preserving newer changes
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/UserNotifications" }
+        "400":
+          description: Invalid cursor
+        "404":
+          description: Profile not found
 components:
   schemas:
     ApiError:
@@ -691,6 +821,17 @@ components:
         category: { type: [string, "null"] }
         title: { type: [string, "null"] }
         status: { type: string }
+        assignedTo: { type: [string, "null"], enum: [volunteers, municipality, other_authority, null] }
+        municipalityNote: { type: [string, "null"] }
+        scheduledAt: { type: [string, "null"], format: date-time }
+        decidedAt: { type: [string, "null"], format: date-time }
+        updatedAt: { type: string, format: date-time }
+        analysis:
+          anyOf:
+            - { $ref: "#/components/schemas/IssueAnalysis" }
+            - { type: "null" }
+        analysisModel: { type: [string, "null"] }
+        requiresProfessionalReview: { type: boolean }
         createdAt: { type: string, format: date-time }
       required: [id, authorId, city, neighborhood, description, photoUrl, category, title, status, createdAt]
     ReportInput:
@@ -748,6 +889,9 @@ components:
         isSafe: { type: boolean }
         joinedCount: { type: integer }
         joinedByUser: { type: boolean }
+        applicationStatus: { type: [string, "null"], enum: [pending, accepted, declined, confirmed, null] }
+        scheduledAt: { type: [string, "null"], format: date-time }
+        municipalityNote: { type: [string, "null"] }
       required: [id, reportId, title, city, neighborhood, description, requiredSkills, volunteerLimit, status, isSafe, joinedCount, joinedByUser]
     ProjectInput:
       type: object
@@ -769,6 +913,7 @@ components:
       properties:
         success: { type: boolean }
         membershipId: { type: string }
+        status: { type: string, enum: [pending] }
       required: [success, membershipId]
     MatchVolunteersInput:
       type: object
@@ -803,7 +948,12 @@ components:
         userId: { type: string }
         userName: { type: string }
         city: { type: string }
-        status: { type: string, enum: [joined, confirmed] }
+        status: { type: string, enum: [pending, accepted, declined, confirmed] }
+        municipalityNote: { type: [string, "null"] }
+        projectNote: { type: [string, "null"] }
+        scheduledAt: { type: [string, "null"], format: date-time }
+        projectStatus: { type: string }
+        updatedAt: { type: string, format: date-time }
       required: [id, projectId, projectTitle, userId, userName, city, status]
     AdminSummary:
       type: object
@@ -823,3 +973,56 @@ components:
       properties:
         status: { type: string, enum: [open, rejected] }
       required: [status]
+    AppConfig:
+      type: object
+      properties:
+        cityName: { type: string }
+        cityNameAr: { type: string }
+        cityNameEn: { type: string }
+      required: [cityName, cityNameAr, cityNameEn]
+    ReportDecisionInput:
+      type: object
+      properties:
+        status: { type: string, enum: [under_review, accepted_for_volunteers, assigned_to_municipality, referred, scheduled, completed, rejected] }
+        assignedTo: { type: string, enum: [volunteers, municipality, other_authority] }
+        scheduledAt: { type: [string, "null"], format: date-time }
+        note: { type: string, maxLength: 2000 }
+      required: [status, assignedTo, note]
+    ApplicationDecisionInput:
+      type: object
+      properties:
+        status: { type: string, enum: [accepted, declined] }
+        note: { type: string, maxLength: 2000 }
+      required: [status]
+    UserNotifications:
+      type: object
+      properties:
+        unreadCount: { type: integer }
+        latestChangeId: { type: integer }
+      required: [unreadCount, latestChangeId]
+    NotificationReadInput:
+      type: object
+      properties:
+        latestChangeId: { type: integer, minimum: 0 }
+      required: [latestChangeId]
+    UserActivity:
+      type: object
+      properties:
+        reports: { type: array, items: { $ref: "#/components/schemas/Report" } }
+        volunteering: { type: array, items: { $ref: "#/components/schemas/Membership" } }
+        notifications: { $ref: "#/components/schemas/UserNotifications" }
+      required: [reports, volunteering, notifications]
+    MunicipalityDashboard:
+      type: object
+      properties:
+        reports: { type: array, items: { $ref: "#/components/schemas/Report" } }
+        applications: { type: array, items: { $ref: "#/components/schemas/Membership" } }
+        pendingProjects: { type: array, items: { $ref: "#/components/schemas/Project" } }
+        counters:
+          type: object
+          properties:
+            reportsByStatus: { type: object, additionalProperties: { type: integer } }
+            pendingApplications: { type: integer }
+            averageDecisionHours: { type: [number, "null"] }
+          required: [reportsByStatus, pendingApplications, averageDecisionHours]
+      required: [reports, applications, pendingProjects, counters]

@@ -105,6 +105,51 @@ export const ReportLanguage = {
   en: 'en',
 } as const;
 
+/**
+ * @nullable
+ */
+export type ReportAssignedTo = typeof ReportAssignedTo[keyof typeof ReportAssignedTo] | null;
+
+
+export const ReportAssignedTo = {
+  volunteers: 'volunteers',
+  municipality: 'municipality',
+  other_authority: 'other_authority',
+} as const;
+
+export type IssueAnalysisCategory = typeof IssueAnalysisCategory[keyof typeof IssueAnalysisCategory];
+
+
+export const IssueAnalysisCategory = {
+  Waste: 'Waste',
+  Roads: 'Roads',
+  Lighting: 'Lighting',
+  Public_spaces: 'Public spaces',
+  Buildings: 'Buildings',
+  Other: 'Other',
+} as const;
+
+export type IssueAnalysisSuggestedPriority = typeof IssueAnalysisSuggestedPriority[keyof typeof IssueAnalysisSuggestedPriority];
+
+
+export const IssueAnalysisSuggestedPriority = {
+  low: 'low',
+  medium: 'medium',
+  high: 'high',
+} as const;
+
+export interface IssueAnalysis {
+  category: IssueAnalysisCategory;
+  title: string;
+  description: string;
+  suggestedPriority: IssueAnalysisSuggestedPriority;
+  safetyFlags: string[];
+  suggestedActions: string[];
+  requiredSkills: string[];
+  suggestedMaterials: string[];
+  requiresProfessionalReview: boolean;
+}
+
 export interface Report {
   id: string;
   /** Original report content language; never changed by interface toggles */
@@ -122,6 +167,19 @@ export interface Report {
   /** @nullable */
   title: string | null;
   status: string;
+  /** @nullable */
+  assignedTo?: ReportAssignedTo;
+  /** @nullable */
+  municipalityNote?: string | null;
+  /** @nullable */
+  scheduledAt?: string | null;
+  /** @nullable */
+  decidedAt?: string | null;
+  updatedAt?: string;
+  analysis?: IssueAnalysis | null;
+  /** @nullable */
+  analysisModel?: string | null;
+  requiresProfessionalReview?: boolean;
   createdAt: string;
 }
 
@@ -165,39 +223,6 @@ export interface AnalyzeIssueInput {
   description: string;
 }
 
-export type IssueAnalysisCategory = typeof IssueAnalysisCategory[keyof typeof IssueAnalysisCategory];
-
-
-export const IssueAnalysisCategory = {
-  Waste: 'Waste',
-  Roads: 'Roads',
-  Lighting: 'Lighting',
-  Public_spaces: 'Public spaces',
-  Buildings: 'Buildings',
-  Other: 'Other',
-} as const;
-
-export type IssueAnalysisSuggestedPriority = typeof IssueAnalysisSuggestedPriority[keyof typeof IssueAnalysisSuggestedPriority];
-
-
-export const IssueAnalysisSuggestedPriority = {
-  low: 'low',
-  medium: 'medium',
-  high: 'high',
-} as const;
-
-export interface IssueAnalysis {
-  category: IssueAnalysisCategory;
-  title: string;
-  description: string;
-  suggestedPriority: IssueAnalysisSuggestedPriority;
-  safetyFlags: string[];
-  suggestedActions: string[];
-  requiredSkills: string[];
-  suggestedMaterials: string[];
-  requiresProfessionalReview: boolean;
-}
-
 export interface IssueAnalysisResponse {
   model: string;
   analysis: IssueAnalysis;
@@ -212,6 +237,19 @@ export const ProjectStatus = {
   in_progress: 'in_progress',
   completed: 'completed',
   rejected: 'rejected',
+} as const;
+
+/**
+ * @nullable
+ */
+export type ProjectApplicationStatus = typeof ProjectApplicationStatus[keyof typeof ProjectApplicationStatus] | null;
+
+
+export const ProjectApplicationStatus = {
+  pending: 'pending',
+  accepted: 'accepted',
+  declined: 'declined',
+  confirmed: 'confirmed',
 } as const;
 
 export interface Project {
@@ -229,6 +267,12 @@ export interface Project {
   isSafe: boolean;
   joinedCount: number;
   joinedByUser: boolean;
+  /** @nullable */
+  applicationStatus?: ProjectApplicationStatus;
+  /** @nullable */
+  scheduledAt?: string | null;
+  /** @nullable */
+  municipalityNote?: string | null;
 }
 
 export interface ProjectInput {
@@ -255,9 +299,17 @@ export interface JoinProjectInput {
   userId: string;
 }
 
+export type ProjectJoinResultStatus = typeof ProjectJoinResultStatus[keyof typeof ProjectJoinResultStatus];
+
+
+export const ProjectJoinResultStatus = {
+  pending: 'pending',
+} as const;
+
 export interface ProjectJoinResult {
   success: boolean;
   membershipId: string;
+  status?: ProjectJoinResultStatus;
 }
 
 export type MatchVolunteersInputLanguage = typeof MatchVolunteersInputLanguage[keyof typeof MatchVolunteersInputLanguage];
@@ -299,7 +351,9 @@ export type MembershipStatus = typeof MembershipStatus[keyof typeof MembershipSt
 
 
 export const MembershipStatus = {
-  joined: 'joined',
+  pending: 'pending',
+  accepted: 'accepted',
+  declined: 'declined',
   confirmed: 'confirmed',
 } as const;
 
@@ -312,6 +366,14 @@ export interface Membership {
   userName: string;
   city: string;
   status: MembershipStatus;
+  /** @nullable */
+  municipalityNote?: string | null;
+  /** @nullable */
+  projectNote?: string | null;
+  /** @nullable */
+  scheduledAt?: string | null;
+  projectStatus?: string;
+  updatedAt?: string;
 }
 
 export interface AdminSummary {
@@ -330,5 +392,88 @@ export const AdminProjectStatusInputStatus = {
 
 export interface AdminProjectStatusInput {
   status: AdminProjectStatusInputStatus;
+}
+
+export interface AppConfig {
+  cityName: string;
+  cityNameAr: string;
+  cityNameEn: string;
+}
+
+export type ReportDecisionInputStatus = typeof ReportDecisionInputStatus[keyof typeof ReportDecisionInputStatus];
+
+
+export const ReportDecisionInputStatus = {
+  under_review: 'under_review',
+  accepted_for_volunteers: 'accepted_for_volunteers',
+  assigned_to_municipality: 'assigned_to_municipality',
+  referred: 'referred',
+  scheduled: 'scheduled',
+  completed: 'completed',
+  rejected: 'rejected',
+} as const;
+
+export type ReportDecisionInputAssignedTo = typeof ReportDecisionInputAssignedTo[keyof typeof ReportDecisionInputAssignedTo];
+
+
+export const ReportDecisionInputAssignedTo = {
+  volunteers: 'volunteers',
+  municipality: 'municipality',
+  other_authority: 'other_authority',
+} as const;
+
+export interface ReportDecisionInput {
+  status: ReportDecisionInputStatus;
+  assignedTo: ReportDecisionInputAssignedTo;
+  /** @nullable */
+  scheduledAt?: string | null;
+  /** @maxLength 2000 */
+  note: string;
+}
+
+export type ApplicationDecisionInputStatus = typeof ApplicationDecisionInputStatus[keyof typeof ApplicationDecisionInputStatus];
+
+
+export const ApplicationDecisionInputStatus = {
+  accepted: 'accepted',
+  declined: 'declined',
+} as const;
+
+export interface ApplicationDecisionInput {
+  status: ApplicationDecisionInputStatus;
+  /** @maxLength 2000 */
+  note?: string;
+}
+
+export interface UserNotifications {
+  unreadCount: number;
+  latestChangeId: number;
+}
+
+export interface NotificationReadInput {
+  /** @minimum 0 */
+  latestChangeId: number;
+}
+
+export interface UserActivity {
+  reports: Report[];
+  volunteering: Membership[];
+  notifications: UserNotifications;
+}
+
+export type MunicipalityDashboardCountersReportsByStatus = {[key: string]: number};
+
+export type MunicipalityDashboardCounters = {
+  reportsByStatus: MunicipalityDashboardCountersReportsByStatus;
+  pendingApplications: number;
+  /** @nullable */
+  averageDecisionHours: number | null;
+};
+
+export interface MunicipalityDashboard {
+  reports: Report[];
+  applications: Membership[];
+  pendingProjects: Project[];
+  counters: MunicipalityDashboardCounters;
 }
 

@@ -1,2 +1,3 @@
 - [Gemma output budgeting](gemma-output-budget.md) — short generation checks need minimal thinking and enough output tokens; model availability alone is not success.
 - [Workspace test boundary](source-export-test-boundary.md) — source-exporting workspace packages need bundled test dependencies, not assumptions about root hoisting.
+- [OpenAPI code generation](openapi-body-schemas.md) — named inputs avoid export collisions; normalize validated dates before SQLite binding.

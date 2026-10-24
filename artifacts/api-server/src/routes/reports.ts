@@ -13,6 +13,7 @@ import { reportRecord } from "../lib/records";
 import { fileAsBlob, handleImageUpload, hasValidImageSignature } from "../lib/uploads";
 import { saveImage } from "../lib/images";
 import { validSkills } from "../lib/skills";
+import { pilotCity } from "../lib/pilot-city";
 
 const router: IRouter = Router();
 
@@ -30,6 +31,7 @@ router.post("/reports", handleImageUpload, async (req, res): Promise<void> => {
 
   const input = CreateReportBody.safeParse({
     ...req.body,
+    city: pilotCity.cityName,
     image: file ? fileAsBlob(file) : undefined,
   });
   if (!input.success) {
@@ -79,7 +81,7 @@ router.post("/reports", handleImageUpload, async (req, res): Promise<void> => {
       `).run(
         id,
         authorId,
-        input.data.city.trim(),
+        pilotCity.cityName,
         input.data.neighborhood.trim(),
         input.data.description.trim(),
         imageId,

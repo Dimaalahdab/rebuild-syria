@@ -1,4 +1,3 @@
-import { randomUUID } from "node:crypto";
 import { Router, type IRouter } from "express";
 import {
   GetProjectHeader,
@@ -16,35 +15,38 @@ import { sqlite } from "../lib/sqlite";
 import { parseSkills, projectRecord } from "../lib/records";
 import { matchVolunteers as askGemma, safeProviderError } from "../lib/gemma";
 import { gemmaRateLimit } from "../lib/gemma-rate-limit";
+import { applyForProject, WorkflowError } from "../lib/municipality";
 
 const router: IRouter = Router();
 
 function projectRows(userId: string) {
   return sqlite.prepare(`
     SELECT p.*,
-      (SELECT COUNT(*) FROM project_memberships pm WHERE pm.project_id = p.id) AS joined_count,
+      (SELECT COUNT(*) FROM project_memberships pm WHERE pm.project_id = p.id AND pm.status IN ('accepted','confirmed')) AS joined_count,
       EXISTS(
         SELECT 1 FROM project_memberships mine
         WHERE mine.project_id = p.id AND mine.user_id = ?
-      ) AS joined_by_user
+      ) AS joined_by_user,
+      (SELECT status FROM project_memberships mine WHERE mine.project_id = p.id AND mine.user_id = ?) AS application_status
     FROM projects p
     WHERE p.is_safe = 1 AND p.status IN ('open', 'in_progress', 'completed')
     ORDER BY CASE p.status WHEN 'open' THEN 0 WHEN 'in_progress' THEN 1 ELSE 2 END, p.created_at DESC
-  `).all(userId) as Record<string, unknown>[];
+  `).all(userId, userId) as Record<string, unknown>[];
 }
 
 function projectRow(id: string, userId: string) {
   return sqlite.prepare(`
     SELECT p.*,
-      (SELECT COUNT(*) FROM project_memberships pm WHERE pm.project_id = p.id) AS joined_count,
+      (SELECT COUNT(*) FROM project_memberships pm WHERE pm.project_id = p.id AND pm.status IN ('accepted','confirmed')) AS joined_count,
       EXISTS(
         SELECT 1 FROM project_memberships mine
         WHERE mine.project_id = p.id AND mine.user_id = ?
-      ) AS joined_by_user
+      ) AS joined_by_user,
+      (SELECT status FROM project_memberships mine WHERE mine.project_id = p.id AND mine.user_id = ?) AS application_status
     FROM projects p
     WHERE p.id = ? AND p.is_safe = 1
       AND p.status IN ('open', 'in_progress', 'completed')
-  `).get(userId, id) as Record<string, unknown> | undefined;
+  `).get(userId, userId, id) as Record<string, unknown> | undefined;
 }
 
 router.get("/projects", (req, res): void => {
@@ -91,44 +93,12 @@ router.post("/projects/:id/join", (req, res): void => {
     res.status(400).json({ error: input.error.message });
     return;
   }
-  const user = sqlite.prepare("SELECT id, role FROM users WHERE id = ?").get(input.data.userId) as
-    | Record<string, unknown>
-    | undefined;
-  if (!user) {
-    res.status(400).json({ error: "Create a demo profile before joining a project." });
-    return;
+  try {
+    res.status(201).json(JoinProjectResponse.parse(applyForProject(params.data.id, input.data.userId)));
+  } catch (error) {
+    if (error instanceof WorkflowError) res.status(error.status).json({ error: error.message });
+    else throw error;
   }
-  if (user.role !== "volunteer") {
-    res.status(400).json({ error: "Choose the volunteer role in your demo profile to join projects." });
-    return;
-  }
-  const project = sqlite.prepare(`
-    SELECT p.*,
-      (SELECT COUNT(*) FROM project_memberships pm WHERE pm.project_id = p.id) AS joined_count
-    FROM projects p WHERE p.id = ?
-  `).get(params.data.id) as Record<string, unknown> | undefined;
-  if (!project || Number(project.is_safe) !== 1 || project.status !== "open") {
-    res.status(400).json({ error: "This project is not open for volunteers." });
-    return;
-  }
-  const alreadyJoined = sqlite.prepare(`
-    SELECT 1 FROM project_memberships WHERE project_id = ? AND user_id = ?
-  `).get(params.data.id, input.data.userId);
-  if (alreadyJoined) {
-    res.status(409).json({ error: "You have already joined this project." });
-    return;
-  }
-  if (Number(project.joined_count) >= Number(project.volunteer_limit)) {
-    res.status(409).json({ error: "This project has reached its volunteer limit." });
-    return;
-  }
-
-  const membershipId = randomUUID();
-  sqlite.prepare(`
-    INSERT INTO project_memberships (id, project_id, user_id, status)
-    VALUES (?, ?, ?, 'joined')
-  `).run(membershipId, params.data.id, input.data.userId);
-  res.status(201).json(JoinProjectResponse.parse({ success: true, membershipId }));
 });
 
 router.post("/match-volunteers", gemmaRateLimit, async (req, res): Promise<void> => {

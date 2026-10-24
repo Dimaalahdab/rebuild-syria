@@ -17,6 +17,8 @@ import { Link, useLocation } from 'wouter';
 import { useState } from 'react';
 import { readDemoProfile, saveDemoProfile } from '@/lib/demo-profile';
 import { useI18n, type TKey } from '@/i18n';
+import { AccountBadge } from '@/components/account-badge';
+import { useCity } from '@/hooks/use-app-config';
 import { ArrowForward, ArrowOutward, LanguageToggle } from '@/components/i18n-ui';
 
 const issues: { n: 1 | 2 | 3; icon: typeof Activity }[] = [
@@ -78,6 +80,7 @@ function Home() {
   const { t, fmtNumber } = useI18n();
   const [, navigate] = useLocation();
   const createGuest = useCreateUser();
+  const city = useCity();
   const [guestPending, setGuestPending] = useState(false);
   const [guestError, setGuestError] = useState(false);
   const health = useGetApiHealth();
@@ -102,7 +105,7 @@ function Home() {
         }
       }
       const user = await createGuest.mutateAsync({
-        data: { name: t('home.guest.name'), role: 'volunteer', city: 'دمشق', skills: ['Cleaning', 'Organization'] },
+        data: { name: t('home.guest.name'), role: 'volunteer', city: city.canonical, skills: ['Cleaning', 'Organization'] },
       });
       saveDemoProfile(user);
       navigate('/projects');
@@ -128,6 +131,7 @@ function Home() {
           <a className="nav-link no-underline" href="#issues" data-testid="link-nav-issues">{t('nav.issues')}</a>
           <a className="nav-link no-underline" href="#projects" data-testid="link-nav-projects">{t('nav.projects')}</a>
           <a className="nav-link no-underline" href="#next-phase" data-testid="link-nav-about">{t('nav.about')}</a>
+          <Link className="nav-link no-underline" href="/account" data-testid="link-nav-my-account">{t('nav.account')}<AccountBadge/></Link>
         </nav>
           <div className="topbar-actions"><LanguageToggle className="desktop-lang" />
           <Link href="/profile" className="desktop-join button-primary !min-h-[42px] !px-4 !text-sm no-underline" data-testid="link-nav-account">
@@ -142,6 +146,7 @@ function Home() {
             <span className="pill pill-demo"><span className="w-1.5 h-1.5 rounded-full bg-[#f4b942]" /> {t('home.hero.pill')}</span>
             <h1 id="hero-title" className="hero-title">{t('home.hero.title1')}<br />{t('home.hero.title2')}</h1>
             <p className="hero-subtitle">{t('home.hero.subtitle')}</p>
+            <p className="hero-subtitle mt-3 flex items-center gap-2 !text-sm" data-testid="text-pilot-city"><span className="status-dot ok"/>{t('home.pilot',{city:city.display})}</p>
             <div className="hero-actions mt-7 flex flex-wrap gap-3">
               <Link href="/report" className="button-primary no-underline" data-testid="link-report-issue">{t('home.cta.report')} <ArrowForward size={17} /></Link>
               <Link href="/projects" className="button-secondary no-underline" data-testid="link-discover-projects">{t('home.cta.discover')} <ArrowOutward size={17} /></Link>
@@ -277,7 +282,7 @@ function Home() {
         <Link href="/" className="active" data-testid="mobile-nav-home"><Trees size={19} /><span>{t('nav.home')}</span></Link>
         <Link href="/report" className="report-nav" data-testid="mobile-nav-report"><MessageSquareWarning size={19} /><span>{t('nav.reportShort')}</span></Link>
         <Link href="/projects" data-testid="mobile-nav-projects"><HardHat size={19} /><span>{t('nav.projects')}</span></Link>
-        <Link href="/account" data-testid="mobile-nav-account"><CircleUserRound size={19} /><span>{t('nav.account')}</span></Link>
+        <Link href="/account" data-testid="mobile-nav-account"><CircleUserRound size={19} /><span>{t('nav.account')}</span><AccountBadge/></Link>
       </nav>
     </div>
   );

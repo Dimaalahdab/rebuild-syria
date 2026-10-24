@@ -10,6 +10,8 @@ export type MembershipStatus = typeof MembershipStatus[keyof typeof MembershipSt
 
 
 export const MembershipStatus = {
-  joined: 'joined',
+  pending: 'pending',
+  accepted: 'accepted',
+  declined: 'declined',
   confirmed: 'confirmed',
 } as const;

@@ -5,6 +5,8 @@
  * Rebuild Syria API
  * OpenAPI spec version: 0.1.0
  */
+import type { IssueAnalysis } from './issueAnalysis';
+import type { ReportAssignedTo } from './reportAssignedTo';
 import type { ReportLanguage } from './reportLanguage';
 
 export interface Report {
@@ -24,5 +26,18 @@ export interface Report {
   /** @nullable */
   title: string | null;
   status: string;
+  /** @nullable */
+  assignedTo?: ReportAssignedTo;
+  /** @nullable */
+  municipalityNote?: string | null;
+  /** @nullable */
+  scheduledAt?: Date | null;
+  /** @nullable */
+  decidedAt?: Date | null;
+  updatedAt?: Date;
+  analysis?: IssueAnalysis | null;
+  /** @nullable */
+  analysisModel?: string | null;
+  requiresProfessionalReview?: boolean;
   createdAt: Date;
 }

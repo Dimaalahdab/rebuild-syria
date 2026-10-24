@@ -6,6 +6,7 @@ import reportsRouter from "./reports";
 import projectsRouter from "./projects";
 import adminRouter from "./admin";
 import imagesRouter from "./images";
+import municipalityRouter from "./municipality";
 
 const router: IRouter = Router();
 
@@ -16,5 +17,6 @@ router.use(reportsRouter);
 router.use(projectsRouter);
 router.use(adminRouter);
 router.use(imagesRouter);
+router.use(municipalityRouter);
 
 export default router;

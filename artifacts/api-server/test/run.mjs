@@ -4,7 +4,7 @@ import { dirname, resolve } from "node:path";
 import { spawnSync } from "node:child_process";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const cases = ["judge-readiness", "localization"];
+const cases = ["judge-readiness", "localization", "municipality"];
 await build({
   absWorkingDir: root,
   entryPoints: cases.map((name) => `test/${name}.ts`),

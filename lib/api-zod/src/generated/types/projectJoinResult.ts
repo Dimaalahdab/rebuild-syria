@@ -5,8 +5,10 @@
  * Rebuild Syria API
  * OpenAPI spec version: 0.1.0
  */
+import type { ProjectJoinResultStatus } from './projectJoinResultStatus';
 
 export interface ProjectJoinResult {
   success: boolean;
   membershipId: string;
+  status?: ProjectJoinResultStatus;
 }

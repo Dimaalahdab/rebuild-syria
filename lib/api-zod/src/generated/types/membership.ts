@@ -16,4 +16,12 @@ export interface Membership {
   userName: string;
   city: string;
   status: MembershipStatus;
+  /** @nullable */
+  municipalityNote?: string | null;
+  /** @nullable */
+  projectNote?: string | null;
+  /** @nullable */
+  scheduledAt?: Date | null;
+  projectStatus?: string;
+  updatedAt?: Date;
 }

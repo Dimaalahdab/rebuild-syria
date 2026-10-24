@@ -9,6 +9,7 @@ Arabic-default bilingual community reporting and safe-volunteering demo (Arabic 
 - `pnpm run build` — typecheck + build all packages
 - `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
 - Required server secret: `GEMINI_API_KEY`; optional `ADMIN_PIN` (demo default 1234).
+- Public environment: `CITY_NAME`, default `Homs / حمص`. New reports and analysis are fixed to this one pilot city; any neighborhood is valid free text.
 
 ## Stack
 
@@ -34,7 +35,7 @@ Arabic-default bilingual community reporting and safe-volunteering demo (Arabic 
 
 ## Product
 
-Profiles, image reports, real Gemma analysis, safe volunteer projects, recommendations, PIN-protected demo administration, and unique impact awards. Judges must be able to start with a one-tap guest profile without filling a form.
+Profiles, image reports, real Gemma analysis, safe volunteer projects, recommendations, PIN-protected Municipality Dashboard, volunteer applications, account status updates and unique impact awards. Judges must be able to start with a one-tap guest profile without filling a form.
 
 ## User preferences
 
@@ -45,6 +46,9 @@ Profiles, image reports, real Gemma analysis, safe volunteer projects, recommend
 - Send the selected language to both Gemma routes. Keep categories and skills in English internally; translate labels only for display.
 - Never open hazardous road, building, electrical, or ordnance work for volunteers.
 - AI neither approves projects nor enrolls people. Its safety notes are not professional certification.
+- The pilot is designed for municipality partnership. Never claim that any municipality has actually endorsed this project.
+- Municipality acceptance automatically creates/reuses a scheduled volunteer project. Applying starts Pending; only a human can accept/decline, and participation points require confirmed attendance.
+- Keep municipality status updates inside the account/menu; no email or SMS.
 
 ## Gotchas
 

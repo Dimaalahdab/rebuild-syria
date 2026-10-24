@@ -5,7 +5,8 @@ import { useAnalyzeIssue, useCreateReport, getGetReportsQueryKey } from '@worksp
 import { AlertTriangle, CheckCircle2, Sparkles } from 'lucide-react';
 import { PageFrame, PlatformShell } from '@/components/platform-shell';
 import { readDemoProfile } from '@/lib/demo-profile';
-import { cityOptions } from '@/i18n/cities';
+import { useCity } from '@/hooks/use-app-config';
+import { AiLabel } from '@/components/ai-label';
 import { useI18n, type TKey } from '@/i18n';
 
 const maxBytes = 5 * 1024 * 1024;
@@ -17,7 +18,7 @@ export default function ReportPage() {
   const [,setLocation] = useLocation();
   const qc = useQueryClient();
   const profile = readDemoProfile();
-  const [city,setCity] = useState(profile?.city ?? '');
+  const { canonical: city, display: cityDisplay } = useCity();
   const [neighborhood,setNeighborhood] = useState('');
   const [description,setDescription] = useState('');
   const [photo,setPhoto] = useState<File|null>(null);
@@ -79,7 +80,7 @@ export default function ReportPage() {
   return <PlatformShell><PageFrame eyebrow={t('report.eyebrow')} title={t('report.title')} intro={t('report.intro')}>
     <div className="surface form-surface">
       <div className="notice mb-5">{t('report.safety')}</div>
-      <div className="field"><label htmlFor="report-city">{t('report.city')}</label><select id="report-city" value={city} onChange={e=>setCity(e.target.value)} required><option value="">{t('ui.cityPlaceholder')}</option>{cityOptions(profile?.city).map(c=><option key={c} value={c}>{label(c)}</option>)}</select></div>
+      <div className="field"><label htmlFor="report-city">{t('report.city')}</label><input id="report-city" data-testid="input-report-city" value={cityDisplay} readOnly aria-readonly="true" className="!bg-[#f0f4ec]"/><span className="field-hint">{t('report.cityFixed')}</span></div>
       <div className="field"><label htmlFor="report-neighborhood">{t('report.neighborhood')}</label><input id="report-neighborhood" dir="auto" value={neighborhood} onChange={e=>setNeighborhood(e.target.value)} required placeholder={t('report.neighborhoodPlaceholder')}/></div>
       <div className="field"><label htmlFor="report-description">{t('report.description')}</label><textarea id="report-description" dir="auto" value={description} onChange={e=>setDescription(e.target.value)} required maxLength={maxChars} placeholder={t('report.descriptionPlaceholder')}/><span className="field-hint">{t('report.charCount',{n:fmtNumber(description.length),max:fmtNumber(maxChars)})}</span></div>
       <div className="field"><label htmlFor="report-photo">{t('report.photo')}</label><input id="report-photo" type="file" accept="image/jpeg,image/png,image/webp" onChange={e=>setFile(e.target.files?.[0])}/><span className="field-hint">{t('report.photoHint')}</span>{previewUrl&&<img className="photo-preview" alt={t('report.photoPreviewAlt')} src={previewUrl}/>}{photoError&&<span className="text-sm text-red-700" role="alert">{t(photoError)}</span>}</div>
@@ -87,13 +88,13 @@ export default function ReportPage() {
       <div className="action-row mb-5"><button type="button" className="action-secondary" onClick={analyze} disabled={analysis.isPending||create.isPending||!photo}><Sparkles size={17}/>{analysis.isPending?t('report.analyzing'):t('report.analyze')}</button><button type="button" className="action-primary" onClick={save} disabled={create.isPending||analysis.isPending||!city.trim()||!neighborhood.trim()||!description.trim()}>{create.isPending?t('report.saving'):t('report.save')}</button></div>
       {analysis.isError&&<div className="notice notice-error mb-4">{t('report.analysisFailedNote')}{analyzeFailDetails&&<details className="mt-2"><summary>{t('ui.technicalDetails')}</summary><code dir="ltr" className="block text-start">{analyzeFailDetails}</code></details>}</div>}
       {analyzed&&<section className="mt-4 mb-5">
-        <div className="field"><label htmlFor="analysis-title">{t('report.analysisTitleLabel')}</label><input id="analysis-title" dir="auto" value={analysisTitle} onChange={e=>setAnalysisTitle(e.target.value)} maxLength={120}/></div>
-        <div className="field"><label htmlFor="analysis-description">{t('report.analysisDescLabel')}</label><textarea id="analysis-description" dir="auto" value={analysisDescription} onChange={e=>setAnalysisDescription(e.target.value)}/></div>
-        <p><b>{t('report.skills')}</b> {analyzed.requiredSkills.map(label).join(sep) || t('ui.none')}</p>
+        <div className="field"><label htmlFor="analysis-title">{t('report.analysisTitleLabel')} <AiLabel/></label><input id="analysis-title" dir="auto" value={analysisTitle} onChange={e=>setAnalysisTitle(e.target.value)} maxLength={120}/></div>
+        <div className="field"><label htmlFor="analysis-description">{t('report.analysisDescLabel')} <AiLabel/></label><textarea id="analysis-description" dir="auto" value={analysisDescription} onChange={e=>setAnalysisDescription(e.target.value)}/></div>
+        <p><AiLabel/> <b>{t('report.skills')}</b> {analyzed.requiredSkills.map(label).join(sep) || t('ui.none')}</p>
         <p><b>{t('report.materials')}</b> <span dir="auto">{analyzed.suggestedMaterials.join(sep) || t('ui.none')}</span></p>
         <p><b>{t('report.review')}</b> {analyzed.requiresProfessionalReview ? t('report.reviewRequired') : t('report.reviewNotSpecified')}</p>
       </section>}
-      {analyzed&&<section className="notice notice-green" aria-live="polite"><h2 className="m-0 mb-2 font-extrabold flex gap-2 items-center"><CheckCircle2 size={18}/> {t('report.prelim')}</h2><p><b dir="auto">{analyzed.title}</b> · {label(analyzed.category)} · {t('report.priority',{priority:label(analyzed.suggestedPriority)})}</p><p dir="auto" className="text-start">{analyzed.description}</p>{analyzed.safetyFlags.length>0&&<p className="flex gap-2 items-start"><AlertTriangle size={17} className="shrink-0"/><span>{t('report.safetyFlags',{flags:analyzed.safetyFlags.join(sep)})}</span></p>}<p><b>{t('report.actions')}</b> <span dir="auto">{analyzed.suggestedActions.join(sep)||t('ui.none')}</span></p><div className="notice mt-3">{t('report.aiDisclaimer')}</div></section>}
+      {analyzed&&<section className="notice notice-green" aria-live="polite"><h2 className="m-0 mb-2 font-extrabold flex gap-2 items-center"><CheckCircle2 size={18}/> {t('report.prelim')} <AiLabel/></h2><p><b dir="auto">{analyzed.title}</b> · {label(analyzed.category)} · {t('report.priority',{priority:label(analyzed.suggestedPriority)})}</p><p dir="auto" className="text-start">{analyzed.description}</p>{analyzed.safetyFlags.length>0&&<p className="flex gap-2 items-start"><AlertTriangle size={17} className="shrink-0"/><span>{t('report.safetyFlags',{flags:analyzed.safetyFlags.join(sep)})}</span></p>}<p><b>{t('report.actions')}</b> <span dir="auto">{analyzed.suggestedActions.join(sep)||t('ui.none')}</span></p><div className="notice mt-3">{t('report.aiDisclaimer')}</div></section>}
     </div>
   </PageFrame></PlatformShell>;
 }

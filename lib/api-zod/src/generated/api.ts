@@ -156,7 +156,10 @@ export const GetUserProjectsResponseItem = zod.object({
   "status": zod.enum(['pending', 'open', 'in_progress', 'completed', 'rejected']),
   "isSafe": zod.boolean(),
   "joinedCount": zod.number().int(),
-  "joinedByUser": zod.boolean()
+  "joinedByUser": zod.boolean(),
+  "applicationStatus": zod.union([zod.literal('pending'),zod.literal('accepted'),zod.literal('declined'),zod.literal('confirmed'),zod.literal(null)]).nullish(),
+  "scheduledAt": zod.coerce.date().nullish(),
+  "municipalityNote": zod.string().nullish()
 })
 export const GetUserProjectsResponse = zod.array(GetUserProjectsResponseItem)
 
@@ -176,6 +179,24 @@ export const GetReportsResponseItem = zod.object({
   "category": zod.string().nullable(),
   "title": zod.string().nullable(),
   "status": zod.string(),
+  "assignedTo": zod.union([zod.literal('volunteers'),zod.literal('municipality'),zod.literal('other_authority'),zod.literal(null)]).nullish(),
+  "municipalityNote": zod.string().nullish(),
+  "scheduledAt": zod.coerce.date().nullish(),
+  "decidedAt": zod.coerce.date().nullish(),
+  "updatedAt": zod.coerce.date().optional(),
+  "analysis": zod.union([zod.object({
+  "category": zod.enum(['Waste', 'Roads', 'Lighting', 'Public spaces', 'Buildings', 'Other']),
+  "title": zod.string(),
+  "description": zod.string(),
+  "suggestedPriority": zod.enum(['low', 'medium', 'high']),
+  "safetyFlags": zod.array(zod.string()),
+  "suggestedActions": zod.array(zod.string()),
+  "requiredSkills": zod.array(zod.string()),
+  "suggestedMaterials": zod.array(zod.string()),
+  "requiresProfessionalReview": zod.boolean()
+}),zod.null()]).optional(),
+  "analysisModel": zod.string().nullish(),
+  "requiresProfessionalReview": zod.boolean().optional(),
   "createdAt": zod.coerce.date()
 })
 export const GetReportsResponse = zod.array(GetReportsResponseItem)
@@ -211,6 +232,24 @@ export const CreateReportResponse = zod.object({
   "category": zod.string().nullable(),
   "title": zod.string().nullable(),
   "status": zod.string(),
+  "assignedTo": zod.union([zod.literal('volunteers'),zod.literal('municipality'),zod.literal('other_authority'),zod.literal(null)]).nullish(),
+  "municipalityNote": zod.string().nullish(),
+  "scheduledAt": zod.coerce.date().nullish(),
+  "decidedAt": zod.coerce.date().nullish(),
+  "updatedAt": zod.coerce.date().optional(),
+  "analysis": zod.union([zod.object({
+  "category": zod.enum(['Waste', 'Roads', 'Lighting', 'Public spaces', 'Buildings', 'Other']),
+  "title": zod.string(),
+  "description": zod.string(),
+  "suggestedPriority": zod.enum(['low', 'medium', 'high']),
+  "safetyFlags": zod.array(zod.string()),
+  "suggestedActions": zod.array(zod.string()),
+  "requiredSkills": zod.array(zod.string()),
+  "suggestedMaterials": zod.array(zod.string()),
+  "requiresProfessionalReview": zod.boolean()
+}),zod.null()]).optional(),
+  "analysisModel": zod.string().nullish(),
+  "requiresProfessionalReview": zod.boolean().optional(),
   "createdAt": zod.coerce.date()
 })
 
@@ -234,6 +273,24 @@ export const GetReportResponse = zod.object({
   "category": zod.string().nullable(),
   "title": zod.string().nullable(),
   "status": zod.string(),
+  "assignedTo": zod.union([zod.literal('volunteers'),zod.literal('municipality'),zod.literal('other_authority'),zod.literal(null)]).nullish(),
+  "municipalityNote": zod.string().nullish(),
+  "scheduledAt": zod.coerce.date().nullish(),
+  "decidedAt": zod.coerce.date().nullish(),
+  "updatedAt": zod.coerce.date().optional(),
+  "analysis": zod.union([zod.object({
+  "category": zod.enum(['Waste', 'Roads', 'Lighting', 'Public spaces', 'Buildings', 'Other']),
+  "title": zod.string(),
+  "description": zod.string(),
+  "suggestedPriority": zod.enum(['low', 'medium', 'high']),
+  "safetyFlags": zod.array(zod.string()),
+  "suggestedActions": zod.array(zod.string()),
+  "requiredSkills": zod.array(zod.string()),
+  "suggestedMaterials": zod.array(zod.string()),
+  "requiresProfessionalReview": zod.boolean()
+}),zod.null()]).optional(),
+  "analysisModel": zod.string().nullish(),
+  "requiresProfessionalReview": zod.boolean().optional(),
   "createdAt": zod.coerce.date()
 })
 
@@ -290,7 +347,10 @@ export const GetProjectsResponseItem = zod.object({
   "status": zod.enum(['pending', 'open', 'in_progress', 'completed', 'rejected']),
   "isSafe": zod.boolean(),
   "joinedCount": zod.number().int(),
-  "joinedByUser": zod.boolean()
+  "joinedByUser": zod.boolean(),
+  "applicationStatus": zod.union([zod.literal('pending'),zod.literal('accepted'),zod.literal('declined'),zod.literal('confirmed'),zod.literal(null)]).nullish(),
+  "scheduledAt": zod.coerce.date().nullish(),
+  "municipalityNote": zod.string().nullish()
 })
 export const GetProjectsResponse = zod.array(GetProjectsResponseItem)
 
@@ -319,7 +379,10 @@ export const GetProjectResponse = zod.object({
   "status": zod.enum(['pending', 'open', 'in_progress', 'completed', 'rejected']),
   "isSafe": zod.boolean(),
   "joinedCount": zod.number().int(),
-  "joinedByUser": zod.boolean()
+  "joinedByUser": zod.boolean(),
+  "applicationStatus": zod.union([zod.literal('pending'),zod.literal('accepted'),zod.literal('declined'),zod.literal('confirmed'),zod.literal(null)]).nullish(),
+  "scheduledAt": zod.coerce.date().nullish(),
+  "municipalityNote": zod.string().nullish()
 })
 
 
@@ -336,7 +399,8 @@ export const JoinProjectBody = zod.object({
 
 export const JoinProjectResponse = zod.object({
   "success": zod.boolean(),
-  "membershipId": zod.string()
+  "membershipId": zod.string(),
+  "status": zod.enum(['pending']).optional()
 })
 
 
@@ -382,6 +446,24 @@ export const GetAdminSummaryResponse = zod.object({
   "category": zod.string().nullable(),
   "title": zod.string().nullable(),
   "status": zod.string(),
+  "assignedTo": zod.union([zod.literal('volunteers'),zod.literal('municipality'),zod.literal('other_authority'),zod.literal(null)]).nullish(),
+  "municipalityNote": zod.string().nullish(),
+  "scheduledAt": zod.coerce.date().nullish(),
+  "decidedAt": zod.coerce.date().nullish(),
+  "updatedAt": zod.coerce.date().optional(),
+  "analysis": zod.union([zod.object({
+  "category": zod.enum(['Waste', 'Roads', 'Lighting', 'Public spaces', 'Buildings', 'Other']),
+  "title": zod.string(),
+  "description": zod.string(),
+  "suggestedPriority": zod.enum(['low', 'medium', 'high']),
+  "safetyFlags": zod.array(zod.string()),
+  "suggestedActions": zod.array(zod.string()),
+  "requiredSkills": zod.array(zod.string()),
+  "suggestedMaterials": zod.array(zod.string()),
+  "requiresProfessionalReview": zod.boolean()
+}),zod.null()]).optional(),
+  "analysisModel": zod.string().nullish(),
+  "requiresProfessionalReview": zod.boolean().optional(),
   "createdAt": zod.coerce.date()
 })),
   "pendingProjects": zod.array(zod.object({
@@ -397,7 +479,10 @@ export const GetAdminSummaryResponse = zod.object({
   "status": zod.enum(['pending', 'open', 'in_progress', 'completed', 'rejected']),
   "isSafe": zod.boolean(),
   "joinedCount": zod.number().int(),
-  "joinedByUser": zod.boolean()
+  "joinedByUser": zod.boolean(),
+  "applicationStatus": zod.union([zod.literal('pending'),zod.literal('accepted'),zod.literal('declined'),zod.literal('confirmed'),zod.literal(null)]).nullish(),
+  "scheduledAt": zod.coerce.date().nullish(),
+  "municipalityNote": zod.string().nullish()
 })),
   "joinedMemberships": zod.array(zod.object({
   "id": zod.string(),
@@ -407,7 +492,12 @@ export const GetAdminSummaryResponse = zod.object({
   "userId": zod.string(),
   "userName": zod.string(),
   "city": zod.string(),
-  "status": zod.enum(['joined', 'confirmed'])
+  "status": zod.enum(['pending', 'accepted', 'declined', 'confirmed']),
+  "municipalityNote": zod.string().nullish(),
+  "projectNote": zod.string().nullish(),
+  "scheduledAt": zod.coerce.date().nullish(),
+  "projectStatus": zod.string().optional(),
+  "updatedAt": zod.coerce.date().optional()
 }))
 })
 
@@ -435,6 +525,24 @@ export const VerifyReportResponse = zod.object({
   "category": zod.string().nullable(),
   "title": zod.string().nullable(),
   "status": zod.string(),
+  "assignedTo": zod.union([zod.literal('volunteers'),zod.literal('municipality'),zod.literal('other_authority'),zod.literal(null)]).nullish(),
+  "municipalityNote": zod.string().nullish(),
+  "scheduledAt": zod.coerce.date().nullish(),
+  "decidedAt": zod.coerce.date().nullish(),
+  "updatedAt": zod.coerce.date().optional(),
+  "analysis": zod.union([zod.object({
+  "category": zod.enum(['Waste', 'Roads', 'Lighting', 'Public spaces', 'Buildings', 'Other']),
+  "title": zod.string(),
+  "description": zod.string(),
+  "suggestedPriority": zod.enum(['low', 'medium', 'high']),
+  "safetyFlags": zod.array(zod.string()),
+  "suggestedActions": zod.array(zod.string()),
+  "requiredSkills": zod.array(zod.string()),
+  "suggestedMaterials": zod.array(zod.string()),
+  "requiresProfessionalReview": zod.boolean()
+}),zod.null()]).optional(),
+  "analysisModel": zod.string().nullish(),
+  "requiresProfessionalReview": zod.boolean().optional(),
   "createdAt": zod.coerce.date()
 })
 
@@ -481,7 +589,10 @@ export const CreateProjectFromReportResponse = zod.object({
   "status": zod.enum(['pending', 'open', 'in_progress', 'completed', 'rejected']),
   "isSafe": zod.boolean(),
   "joinedCount": zod.number().int(),
-  "joinedByUser": zod.boolean()
+  "joinedByUser": zod.boolean(),
+  "applicationStatus": zod.union([zod.literal('pending'),zod.literal('accepted'),zod.literal('declined'),zod.literal('confirmed'),zod.literal(null)]).nullish(),
+  "scheduledAt": zod.coerce.date().nullish(),
+  "municipalityNote": zod.string().nullish()
 })
 
 
@@ -513,7 +624,10 @@ export const UpdateProjectStatusResponse = zod.object({
   "status": zod.enum(['pending', 'open', 'in_progress', 'completed', 'rejected']),
   "isSafe": zod.boolean(),
   "joinedCount": zod.number().int(),
-  "joinedByUser": zod.boolean()
+  "joinedByUser": zod.boolean(),
+  "applicationStatus": zod.union([zod.literal('pending'),zod.literal('accepted'),zod.literal('declined'),zod.literal('confirmed'),zod.literal(null)]).nullish(),
+  "scheduledAt": zod.coerce.date().nullish(),
+  "municipalityNote": zod.string().nullish()
 })
 
 
@@ -536,7 +650,271 @@ export const ConfirmParticipationResponse = zod.object({
   "userId": zod.string(),
   "userName": zod.string(),
   "city": zod.string(),
-  "status": zod.enum(['joined', 'confirmed'])
+  "status": zod.enum(['pending', 'accepted', 'declined', 'confirmed']),
+  "municipalityNote": zod.string().nullish(),
+  "projectNote": zod.string().nullish(),
+  "scheduledAt": zod.coerce.date().nullish(),
+  "projectStatus": zod.string().optional(),
+  "updatedAt": zod.coerce.date().optional()
+})
+
+
+export const GetAppConfigResponse = zod.object({
+  "cityName": zod.string(),
+  "cityNameAr": zod.string(),
+  "cityNameEn": zod.string()
+})
+
+
+export const GetMunicipalityDashboardHeader = zod.object({
+  "X-Admin-Pin": zod.string()
+})
+
+export const GetMunicipalityDashboardResponse = zod.object({
+  "reports": zod.array(zod.object({
+  "id": zod.string(),
+  "language": zod.enum(['ar', 'en']).optional().describe('Original report content language; never changed by interface toggles'),
+  "isDemo": zod.boolean().optional(),
+  "authorId": zod.string().nullable(),
+  "city": zod.string(),
+  "neighborhood": zod.string(),
+  "description": zod.string(),
+  "photoUrl": zod.string().nullable(),
+  "category": zod.string().nullable(),
+  "title": zod.string().nullable(),
+  "status": zod.string(),
+  "assignedTo": zod.union([zod.literal('volunteers'),zod.literal('municipality'),zod.literal('other_authority'),zod.literal(null)]).nullish(),
+  "municipalityNote": zod.string().nullish(),
+  "scheduledAt": zod.coerce.date().nullish(),
+  "decidedAt": zod.coerce.date().nullish(),
+  "updatedAt": zod.coerce.date().optional(),
+  "analysis": zod.union([zod.object({
+  "category": zod.enum(['Waste', 'Roads', 'Lighting', 'Public spaces', 'Buildings', 'Other']),
+  "title": zod.string(),
+  "description": zod.string(),
+  "suggestedPriority": zod.enum(['low', 'medium', 'high']),
+  "safetyFlags": zod.array(zod.string()),
+  "suggestedActions": zod.array(zod.string()),
+  "requiredSkills": zod.array(zod.string()),
+  "suggestedMaterials": zod.array(zod.string()),
+  "requiresProfessionalReview": zod.boolean()
+}),zod.null()]).optional(),
+  "analysisModel": zod.string().nullish(),
+  "requiresProfessionalReview": zod.boolean().optional(),
+  "createdAt": zod.coerce.date()
+})),
+  "applications": zod.array(zod.object({
+  "id": zod.string(),
+  "isDemo": zod.boolean().optional(),
+  "projectId": zod.string(),
+  "projectTitle": zod.string(),
+  "userId": zod.string(),
+  "userName": zod.string(),
+  "city": zod.string(),
+  "status": zod.enum(['pending', 'accepted', 'declined', 'confirmed']),
+  "municipalityNote": zod.string().nullish(),
+  "projectNote": zod.string().nullish(),
+  "scheduledAt": zod.coerce.date().nullish(),
+  "projectStatus": zod.string().optional(),
+  "updatedAt": zod.coerce.date().optional()
+})),
+  "pendingProjects": zod.array(zod.object({
+  "id": zod.string(),
+  "isDemo": zod.boolean().optional(),
+  "reportId": zod.string().nullable(),
+  "title": zod.string(),
+  "city": zod.string(),
+  "neighborhood": zod.string(),
+  "description": zod.string(),
+  "requiredSkills": zod.array(zod.string()),
+  "volunteerLimit": zod.number().int(),
+  "status": zod.enum(['pending', 'open', 'in_progress', 'completed', 'rejected']),
+  "isSafe": zod.boolean(),
+  "joinedCount": zod.number().int(),
+  "joinedByUser": zod.boolean(),
+  "applicationStatus": zod.union([zod.literal('pending'),zod.literal('accepted'),zod.literal('declined'),zod.literal('confirmed'),zod.literal(null)]).nullish(),
+  "scheduledAt": zod.coerce.date().nullish(),
+  "municipalityNote": zod.string().nullish()
+})),
+  "counters": zod.object({
+  "reportsByStatus": zod.record(zod.string(), zod.number().int()),
+  "pendingApplications": zod.number().int(),
+  "averageDecisionHours": zod.number().nullable()
+})
+})
+
+
+export const DecideReportParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const DecideReportHeader = zod.object({
+  "X-Admin-Pin": zod.string()
+})
+
+export const decideReportBodyNoteMax = 2000;
+
+
+
+export const DecideReportBody = zod.object({
+  "status": zod.enum(['under_review', 'accepted_for_volunteers', 'assigned_to_municipality', 'referred', 'scheduled', 'completed', 'rejected']),
+  "assignedTo": zod.enum(['volunteers', 'municipality', 'other_authority']),
+  "scheduledAt": zod.coerce.date().nullish(),
+  "note": zod.string().max(decideReportBodyNoteMax)
+})
+
+export const DecideReportResponse = zod.object({
+  "id": zod.string(),
+  "language": zod.enum(['ar', 'en']).optional().describe('Original report content language; never changed by interface toggles'),
+  "isDemo": zod.boolean().optional(),
+  "authorId": zod.string().nullable(),
+  "city": zod.string(),
+  "neighborhood": zod.string(),
+  "description": zod.string(),
+  "photoUrl": zod.string().nullable(),
+  "category": zod.string().nullable(),
+  "title": zod.string().nullable(),
+  "status": zod.string(),
+  "assignedTo": zod.union([zod.literal('volunteers'),zod.literal('municipality'),zod.literal('other_authority'),zod.literal(null)]).nullish(),
+  "municipalityNote": zod.string().nullish(),
+  "scheduledAt": zod.coerce.date().nullish(),
+  "decidedAt": zod.coerce.date().nullish(),
+  "updatedAt": zod.coerce.date().optional(),
+  "analysis": zod.union([zod.object({
+  "category": zod.enum(['Waste', 'Roads', 'Lighting', 'Public spaces', 'Buildings', 'Other']),
+  "title": zod.string(),
+  "description": zod.string(),
+  "suggestedPriority": zod.enum(['low', 'medium', 'high']),
+  "safetyFlags": zod.array(zod.string()),
+  "suggestedActions": zod.array(zod.string()),
+  "requiredSkills": zod.array(zod.string()),
+  "suggestedMaterials": zod.array(zod.string()),
+  "requiresProfessionalReview": zod.boolean()
+}),zod.null()]).optional(),
+  "analysisModel": zod.string().nullish(),
+  "requiresProfessionalReview": zod.boolean().optional(),
+  "createdAt": zod.coerce.date()
+})
+
+
+export const DecideVolunteerApplicationParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const DecideVolunteerApplicationHeader = zod.object({
+  "X-Admin-Pin": zod.string()
+})
+
+export const decideVolunteerApplicationBodyNoteMax = 2000;
+
+
+
+export const DecideVolunteerApplicationBody = zod.object({
+  "status": zod.enum(['accepted', 'declined']),
+  "note": zod.string().max(decideVolunteerApplicationBodyNoteMax).optional()
+})
+
+export const DecideVolunteerApplicationResponse = zod.object({
+  "id": zod.string(),
+  "isDemo": zod.boolean().optional(),
+  "projectId": zod.string(),
+  "projectTitle": zod.string(),
+  "userId": zod.string(),
+  "userName": zod.string(),
+  "city": zod.string(),
+  "status": zod.enum(['pending', 'accepted', 'declined', 'confirmed']),
+  "municipalityNote": zod.string().nullish(),
+  "projectNote": zod.string().nullish(),
+  "scheduledAt": zod.coerce.date().nullish(),
+  "projectStatus": zod.string().optional(),
+  "updatedAt": zod.coerce.date().optional()
+})
+
+
+export const GetUserActivityParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const GetUserActivityResponse = zod.object({
+  "reports": zod.array(zod.object({
+  "id": zod.string(),
+  "language": zod.enum(['ar', 'en']).optional().describe('Original report content language; never changed by interface toggles'),
+  "isDemo": zod.boolean().optional(),
+  "authorId": zod.string().nullable(),
+  "city": zod.string(),
+  "neighborhood": zod.string(),
+  "description": zod.string(),
+  "photoUrl": zod.string().nullable(),
+  "category": zod.string().nullable(),
+  "title": zod.string().nullable(),
+  "status": zod.string(),
+  "assignedTo": zod.union([zod.literal('volunteers'),zod.literal('municipality'),zod.literal('other_authority'),zod.literal(null)]).nullish(),
+  "municipalityNote": zod.string().nullish(),
+  "scheduledAt": zod.coerce.date().nullish(),
+  "decidedAt": zod.coerce.date().nullish(),
+  "updatedAt": zod.coerce.date().optional(),
+  "analysis": zod.union([zod.object({
+  "category": zod.enum(['Waste', 'Roads', 'Lighting', 'Public spaces', 'Buildings', 'Other']),
+  "title": zod.string(),
+  "description": zod.string(),
+  "suggestedPriority": zod.enum(['low', 'medium', 'high']),
+  "safetyFlags": zod.array(zod.string()),
+  "suggestedActions": zod.array(zod.string()),
+  "requiredSkills": zod.array(zod.string()),
+  "suggestedMaterials": zod.array(zod.string()),
+  "requiresProfessionalReview": zod.boolean()
+}),zod.null()]).optional(),
+  "analysisModel": zod.string().nullish(),
+  "requiresProfessionalReview": zod.boolean().optional(),
+  "createdAt": zod.coerce.date()
+})),
+  "volunteering": zod.array(zod.object({
+  "id": zod.string(),
+  "isDemo": zod.boolean().optional(),
+  "projectId": zod.string(),
+  "projectTitle": zod.string(),
+  "userId": zod.string(),
+  "userName": zod.string(),
+  "city": zod.string(),
+  "status": zod.enum(['pending', 'accepted', 'declined', 'confirmed']),
+  "municipalityNote": zod.string().nullish(),
+  "projectNote": zod.string().nullish(),
+  "scheduledAt": zod.coerce.date().nullish(),
+  "projectStatus": zod.string().optional(),
+  "updatedAt": zod.coerce.date().optional()
+})),
+  "notifications": zod.object({
+  "unreadCount": zod.number().int(),
+  "latestChangeId": zod.number().int()
+})
+})
+
+
+export const GetUserNotificationsParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const GetUserNotificationsResponse = zod.object({
+  "unreadCount": zod.number().int(),
+  "latestChangeId": zod.number().int()
+})
+
+
+export const MarkNotificationsReadParams = zod.object({
+  "id": zod.coerce.string()
+})
+
+export const markNotificationsReadBodyLatestChangeIdMin = 0;
+
+
+
+export const MarkNotificationsReadBody = zod.object({
+  "latestChangeId": zod.number().int().min(markNotificationsReadBodyLatestChangeIdMin)
+})
+
+export const MarkNotificationsReadResponse = zod.object({
+  "unreadCount": zod.number().int(),
+  "latestChangeId": zod.number().int()
 })
 
 
