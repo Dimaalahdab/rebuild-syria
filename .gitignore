@@ -16,7 +16,13 @@ out-tsc
 
 # dependencies
 node_modules
+data/
+.env
+.env.*
+!.env.example
 /artifacts/api-server/data/
+/artifacts/api-server/uploads/
+/screenshots/
 
 # IDEs and editors
 /.idea

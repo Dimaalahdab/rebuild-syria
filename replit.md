@@ -1,44 +1,53 @@
-# [Project name]
+# Rebuild Syria
 
-_Replace the heading above with the project's name, and this line with one sentence describing what this app does for users._
+Arabic RTL community reporting and safe-volunteering demo. See README.md for operation, API, testing, and publishing instructions.
 
 ## Run & Operate
 
-- `pnpm --filter @workspace/api-server run dev` — run the API server (port 5000)
+- `pnpm --filter @workspace/api-server run dev` — run the API server on managed `PORT` (standalone default 3000)
 - `pnpm run typecheck` — full typecheck across all packages
 - `pnpm run build` — typecheck + build all packages
 - `pnpm --filter @workspace/api-spec run codegen` — regenerate API hooks and Zod schemas from the OpenAPI spec
-- `pnpm --filter @workspace/db run push` — push DB schema changes (dev only)
-- Required env: `DATABASE_URL` — Postgres connection string
+- Required server secret: `GEMINI_API_KEY`; optional `ADMIN_PIN` (demo default 1234).
 
 ## Stack
 
 - pnpm workspaces, Node.js 24, TypeScript 5.9
 - API: Express 5
-- DB: PostgreSQL + Drizzle ORM
-- Validation: Zod (`zod/v4`), `drizzle-zod`
+- Product DB: SQLite via better-sqlite3. The unused template Postgres package is not the product's store.
+- Validation: Zod (`zod/v4`)
 - API codegen: Orval (from OpenAPI spec)
-- Build: esbuild (CJS bundle)
+- Build: esbuild (ESM bundle), Vite
 
 ## Where things live
 
-_Populate as you build — short repo map plus pointers to the source-of-truth file for DB schema, API contracts, theme files, etc._
+- Product UI: `artifacts/rebuild-syria`
+- API, SQLite, uploads, Gemma service: `artifacts/api-server`
+- API contract: `lib/api-spec/openapi.yaml`; regenerate clients and schemas after editing it.
 
 ## Architecture decisions
 
-_Populate as you build — non-obvious choices a reader couldn't infer from the code (3-5 bullets)._
+- Keep the existing monorepo scaffolding while implementing the requested product.
+- The original brief requests JavaScript/react-router-dom; the existing TypeScript/Wouter scaffold was retained, an acknowledged technical deviation.
+- Keep report images as SQLite BLOBs (max 5 MB) with the report transaction; no new folder uploads. This is the owner's requested storage approach.
+- BLOBs preserve photos only while the same SQLite file survives. No Replit local-disk deployment is a durable production database.
 
 ## Product
 
-_Describe the high-level user-facing capabilities of this app once they exist._
+Profiles, image reports, real Gemma analysis, safe volunteer projects, recommendations, PIN-protected demo administration, and unique impact awards. Judges must be able to start with a one-tap guest profile without filling a form.
 
 ## User preferences
 
-_Populate as you build — explicit user instructions worth remembering across sessions._
+- Use SQLite persistence, not PostgreSQL; do not replace the database without permission.
+- Demo identity only: no email, phone, passwords, or real authentication.
+- Arabic-first, mobile-first, RTL; use Arabic skill labels with canonical English skill values.
+- Never open hazardous road, building, electrical, or ordnance work for volunteers.
+- AI neither approves projects nor enrolls people. Its safety notes are not professional certification.
 
 ## Gotchas
 
-_Populate as you build — sharp edges, "always run X before Y" rules._
+- Replit injects `PORT` and `BASE_PATH` for the frontend workflow/build; manual frontend builds need these values.
+- Publishing must have production secrets configured separately. Do not publish local development data.
 
 ## Pointers
 

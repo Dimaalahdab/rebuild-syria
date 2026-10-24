@@ -14,7 +14,10 @@ import {
   UsersRound,
   Wrench,
 } from 'lucide-react';
-import { useGetApiHealth, useHealthCheck } from '@workspace/api-client-react';
+import { getUser, useCreateUser, useGetApiHealth, useHealthCheck } from '@workspace/api-client-react';
+import { Link, useLocation } from 'wouter';
+import { useState } from 'react';
+import { readDemoProfile, saveDemoProfile } from '@/lib/demo-profile';
 
 const issues = [
   {
@@ -106,10 +109,42 @@ function Landscape({ color }: { color: string }) {
 }
 
 function Home() {
+  const [, navigate] = useLocation();
+  const createGuest = useCreateUser();
+  const [guestPending, setGuestPending] = useState(false);
+  const [guestError, setGuestError] = useState('');
   const health = useGetApiHealth();
   const healthCheck = useHealthCheck();
   const apiStatus = health.data?.status;
   const apiIsHealthy = apiStatus?.toLowerCase() === 'ok' || apiStatus?.toLowerCase() === 'healthy';
+
+  async function tryAsGuest() {
+    if (guestPending) return;
+    setGuestPending(true);
+    setGuestError('');
+    try {
+      const existing = readDemoProfile();
+      if (existing) {
+        try {
+          const current = await getUser(existing.id);
+          saveDemoProfile(current);
+          navigate('/projects');
+          return;
+        } catch (error) {
+          if ((error as { status?: number }).status !== 404) throw error;
+        }
+      }
+      const user = await createGuest.mutateAsync({
+        data: { name: 'زائر تجريبي', role: 'volunteer', city: 'دمشق', skills: ['Cleaning', 'Organization'] },
+      });
+      saveDemoProfile(user);
+      navigate('/projects');
+    } catch {
+      setGuestError('تعذر بدء التجربة. تحقق من الاتصال وحاول مجدداً.');
+    } finally {
+      setGuestPending(false);
+    }
+  }
 
   return (
     <div className="app-shell" dir="rtl">
@@ -127,9 +162,9 @@ function Home() {
           <a className="nav-link no-underline" href="#projects" data-testid="link-nav-projects">المشاريع</a>
           <a className="nav-link no-underline" href="#next-phase" data-testid="link-nav-about">عن المنصة</a>
         </nav>
-        <a href="#next-phase" className="desktop-join button-primary !min-h-[42px] !px-4 !text-sm no-underline" data-testid="link-nav-account">
+          <Link href="/profile" className="desktop-join button-primary !min-h-[42px] !px-4 !text-sm no-underline" data-testid="link-nav-account">
           انضم للمجتمع <ArrowLeft size={16} />
-        </a>
+          </Link>
       </header>
 
       <main className="container-wide page-enter">
@@ -140,8 +175,16 @@ function Home() {
             <h1 id="hero-title" className="hero-title">سوريا<br />بتتعمر فينا</h1>
             <p className="hero-subtitle">بلّغ عن مشكلة، شارك بالحل، وخلّي أثرك واضح</p>
             <div className="hero-actions mt-7 flex flex-wrap gap-3">
-              <a href="#next-phase" className="button-primary no-underline" data-testid="link-report-issue">بلّغ عن مشكلة <ArrowLeft size={17} /></a>
-              <a href="#projects" className="button-secondary no-underline" data-testid="link-discover-projects">اكتشف المشاريع <ArrowUpLeft size={17} /></a>
+              <Link href="/report" className="button-primary no-underline" data-testid="link-report-issue">بلّغ عن مشكلة <ArrowLeft size={17} /></Link>
+              <Link href="/projects" className="button-secondary no-underline" data-testid="link-discover-projects">اكتشف المشاريع <ArrowUpLeft size={17} /></Link>
+            </div>
+            <div className="mt-4">
+              <button type="button" onClick={()=>void tryAsGuest()} disabled={guestPending}
+                className="button-secondary disabled:opacity-60" data-testid="button-demo-guest">
+                {guestPending?'جارٍ بدء التجربة…':'جرّب كزائر تجريبي'} <CircleUserRound size={17}/>
+              </button>
+              <p className="mt-2 text-xs text-white/80">ملف تجريبي على هذا الجهاز، دون نموذج أو تسجيل دخول. يُستخدم ملفك الحالي إن وُجد.</p>
+              {guestError&&<p className="mt-2 text-sm text-[#ffe49a]" role="alert">{guestError}</p>}
             </div>
             <div className="mt-5 flex flex-wrap items-center gap-2">
               <div className="health-pill" role="status" data-testid="status-api-health" aria-live="polite">
@@ -193,7 +236,7 @@ function Home() {
               <div className="section-kicker">من يوميات أحيائنا</div>
               <h2 className="section-title" id="issues-title">بلاغات وصلت من الجيران</h2>
             </div>
-            <a href="#next-phase" className="text-action no-underline" data-testid="link-all-issues">كل البلاغات <ArrowLeft size={16} /></a>
+            <Link href="/reports" className="text-action no-underline" data-testid="link-all-issues">كل البلاغات <ArrowLeft size={16} /></Link>
           </div>
           <div className="issue-grid">
             {issues.map((issue, index) => {
@@ -222,7 +265,7 @@ function Home() {
               <div className="section-kicker">وقت نعملها سوا</div>
               <h2 className="section-title" id="projects-title">مشاريع قريبة منّا</h2>
             </div>
-            <a href="#next-phase" className="text-action no-underline" data-testid="link-all-projects">اكتشف المشاريع <ArrowLeft size={16} /></a>
+            <Link href="/projects" className="text-action no-underline" data-testid="link-all-projects">اكتشف المشاريع <ArrowLeft size={16} /></Link>
           </div>
           <div className="project-grid">
             {projects.map((project, index) => (
@@ -240,7 +283,7 @@ function Home() {
                   <div className="progress-track" aria-label={`التقدم ${project.progress} بالمئة`}><div className="progress-fill" style={{ width: `${project.progress}%` }} /></div>
                   <div className="project-foot">
                     <span className="volunteer-count"><UsersRound size={15} /> {project.volunteers} <span className="demo-label">بيانات تجريبية</span></span>
-                    <a className="text-action no-underline" href="#next-phase" data-testid={`link-project-details-${index}`}>التفاصيل <ArrowLeft size={15} /></a>
+                    <Link className="text-action no-underline" href="/projects" data-testid={`link-project-details-${index}`}>التفاصيل <ArrowLeft size={15} /></Link>
                   </div>
                 </div>
               </article>
@@ -251,9 +294,9 @@ function Home() {
         <section className="next-phase" id="next-phase" aria-labelledby="phase-title">
           <div>
             <h2 id="phase-title">خطوتنا التالية: مساحة أوسع للمشاركة</h2>
-            <p>البلاغات، الانضمام للمشاريع، والحسابات ستتوفر في مرحلة قادمة. هذه الصفحة تعرض معاينة تجريبية فقط.</p>
+            <p>أنشئ ملفاً تجريبياً، أرسل بلاغاً جديداً، أو تصفح المشاريع الآمنة التي أعادتها الخدمة.</p>
           </div>
-          <span className="phase-note"><HeartHandshake size={17} /> قريباً في المرحلة التالية</span>
+          <Link href="/profile" className="phase-note no-underline"><HeartHandshake size={17} /> ابدأ بملفك الشخصي <ArrowLeft size={15}/></Link>
         </section>
 
         <footer className="footer">
@@ -268,10 +311,10 @@ function Home() {
       </main>
 
       <nav className="mobile-nav" aria-label="التنقل على الهاتف">
-        <a href="#home" className="active" data-testid="mobile-nav-home"><Trees size={19} /><span>الرئيسية</span></a>
-        <a href="#next-phase" className="report-nav" data-testid="mobile-nav-report"><MessageSquareWarning size={19} /><span>بلّغ</span></a>
-        <a href="#projects" data-testid="mobile-nav-projects"><HardHat size={19} /><span>المشاريع</span></a>
-        <a href="#next-phase" data-testid="mobile-nav-account"><CircleUserRound size={19} /><span>حسابي</span></a>
+        <Link href="/" className="active" data-testid="mobile-nav-home"><Trees size={19} /><span>الرئيسية</span></Link>
+        <Link href="/report" className="report-nav" data-testid="mobile-nav-report"><MessageSquareWarning size={19} /><span>بلّغ</span></Link>
+        <Link href="/projects" data-testid="mobile-nav-projects"><HardHat size={19} /><span>المشاريع</span></Link>
+        <Link href="/account" data-testid="mobile-nav-account"><CircleUserRound size={19} /><span>حسابي</span></Link>
       </nav>
     </div>
   );

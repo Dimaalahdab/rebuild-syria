@@ -1,22 +1,54 @@
 openapi: 3.1.0
 info:
-  # Do not change the title, if the title changes, the import paths will be broken
+  # Do not change the title; generated filenames depend on it.
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Rebuild Syria API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: users
+    description: Demo profiles and impact
+  - name: reports
+    description: Neighborhood reports and image analysis
+  - name: projects
+    description: Safe volunteer projects
+  - name: admin
+    description: Demo admin actions
 paths:
+  /images/{id}:
+    get:
+      operationId: getStoredImage
+      tags: [reports]
+      summary: Read immutable image bytes stored in SQLite
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: Original validated JPEG, PNG, or WebP image (up to 5 MB)
+          content:
+            image/jpeg:
+              schema: { type: string, format: binary }
+            image/png:
+              schema: { type: string, format: binary }
+            image/webp:
+              schema: { type: string, format: binary }
+        "404":
+          description: Image not found
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ApiError" }
   /health:
     get:
       operationId: getApiHealth
       tags: [health]
       summary: Check API and database health
-      description: Returns API health and initialized database status
       responses:
         "200":
           description: Healthy
@@ -28,8 +60,7 @@ paths:
     get:
       operationId: healthCheck
       tags: [health]
-      summary: Health check
-      description: Returns server health status
+      summary: Legacy health check
       responses:
         "200":
           description: Healthy
@@ -37,13 +68,751 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+  /ai-test:
+    get:
+      operationId: testGemmaConnection
+      tags: [reports]
+      summary: Test access to the configured Gemma model
+      responses:
+        "200":
+          description: The real model request succeeded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AiTestResponse"
+        "429":
+          description: Temporarily rate-limited
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "502":
+          description: Google rejected or could not complete the request
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /users:
+    post:
+      operationId: createUser
+      tags: [users]
+      summary: Create a demo profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserInput"
+      responses:
+        "201":
+          description: Profile created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "400":
+          description: Invalid profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /users/{id}:
+    parameters:
+      - name: id
+        in: path
+        required: true
+        schema:
+          type: string
+    get:
+      operationId: getUser
+      tags: [users]
+      summary: Get a demo profile
+      responses:
+        "200":
+          description: Profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "404":
+          description: Profile not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+    patch:
+      operationId: updateUser
+      tags: [users]
+      summary: Update a demo profile
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UserUpdate"
+      responses:
+        "200":
+          description: Updated profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "404":
+          description: Profile not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /users/{id}/impact:
+    get:
+      operationId: getUserImpact
+      tags: [users]
+      summary: Get points and contributions for a profile
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Impact summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImpactSummary"
+        "404":
+          description: Profile not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /users/{id}/projects:
+    get:
+      operationId: getUserProjects
+      tags: [users]
+      summary: List projects joined by a demo profile
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Joined projects
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Project"
+        "404":
+          description: Profile not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /reports:
+    get:
+      operationId: getReports
+      tags: [reports]
+      summary: List neighborhood reports
+      responses:
+        "200":
+          description: Reports
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Report"
+    post:
+      operationId: createReport
+      tags: [reports]
+      summary: Save a neighborhood report
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/ReportInput"
+      responses:
+        "201":
+          description: Report saved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Report"
+        "400":
+          description: Invalid report
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "413":
+          description: Image too large
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /reports/{id}:
+    get:
+      operationId: getReport
+      tags: [reports]
+      summary: Get a report
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Report detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Report"
+        "404":
+          description: Report not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /analyze-issue:
+    post:
+      operationId: analyzeIssue
+      tags: [reports]
+      summary: Analyze a report photo with Gemma 4
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/AnalyzeIssueInput"
+      responses:
+        "200":
+          description: Arabic analysis
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IssueAnalysisResponse"
+        "400":
+          description: Invalid image or report details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "413":
+          description: Image too large
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "502":
+          description: Gemma analysis failed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "429":
+          description: Shared limit of 20 analyze/matching requests per minute per IP; Retry-After header gives seconds
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ApiError" }
+  /projects:
+    get:
+      operationId: getProjects
+      tags: [projects]
+      summary: List safe volunteer projects
+      parameters:
+        - name: X-Demo-User-Id
+          in: header
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Projects
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Project"
+  /projects/{id}:
+    get:
+      operationId: getProject
+      tags: [projects]
+      summary: Get a safe volunteer project
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: X-Demo-User-Id
+          in: header
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Project details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Project"
+        "404":
+          description: Project not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /projects/{id}/join:
+    post:
+      operationId: joinProject
+      tags: [projects]
+      summary: Join an open safe project
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JoinProjectInput"
+      responses:
+        "201":
+          description: Joined project
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProjectJoinResult"
+        "400":
+          description: Project is not open or profile is missing
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "409":
+          description: Already joined or project full
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /match-volunteers:
+    post:
+      operationId: matchVolunteers
+      tags: [projects]
+      summary: Recommend suitable volunteers without enrolling them
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MatchVolunteersInput"
+      responses:
+        "429":
+          description: Shared limit of 20 analyze/matching requests per minute per IP
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ApiError" }
+        "200":
+          description: Ranked volunteer recommendations
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VolunteerMatchResult"
+        "404":
+          description: Project not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /admin/summary:
+    get:
+      operationId: getAdminSummary
+      tags: [admin]
+      summary: Get pending reports, projects, and participation confirmations
+      parameters:
+        - name: X-Admin-Pin
+          in: header
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Admin work queue
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminSummary"
+        "401":
+          description: Invalid demo admin PIN
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /admin/reports/{id}/verify:
+    post:
+      operationId: verifyReport
+      tags: [admin]
+      summary: Verify a report and award points once
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: X-Admin-Pin
+          in: header
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Report verified
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Report"
+        "401":
+          description: Invalid demo admin PIN
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "404":
+          description: Report not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /admin/reports/{id}/project:
+    post:
+      operationId: createProjectFromReport
+      tags: [admin]
+      summary: Propose a volunteer project from a report for admin review
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: X-Admin-Pin
+          in: header
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProjectInput"
+      responses:
+        "201":
+          description: Project proposal created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Project"
+        "400":
+          description: Report cannot safely become a volunteer project
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "401":
+          description: Invalid demo admin PIN
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "404":
+          description: Report not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /admin/projects/{id}/status:
+    post:
+      operationId: updateProjectStatus
+      tags: [admin]
+      summary: Approve or reject a volunteer project
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: X-Admin-Pin
+          in: header
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AdminProjectStatusInput"
+      responses:
+        "200":
+          description: Project status updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Project"
+        "400":
+          description: Unsafe projects cannot be opened to volunteers
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "401":
+          description: Invalid demo admin PIN
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "404":
+          description: Project not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+  /admin/memberships/{id}/confirm:
+    post:
+      operationId: confirmParticipation
+      tags: [admin]
+      summary: Confirm participation and award points once
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: X-Admin-Pin
+          in: header
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Participation confirmed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Membership"
+        "401":
+          description: Invalid demo admin PIN
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+        "404":
+          description: Membership not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
 components:
   schemas:
+    ApiError:
+      type: object
+      properties:
+        error: { type: string }
+      required: [error]
     HealthStatus:
       type: object
       properties:
-        status:
-          type: string
-      required:
-        - status
-
+        status: { type: string }
+      required: [status]
+    AiTestResponse:
+      type: object
+      properties:
+        success: { type: boolean }
+        model: { type: string }
+        available: { type: boolean }
+        response: { type: string }
+      required: [success, model, available, response]
+    User:
+      type: object
+      properties:
+        id: { type: string }
+        name: { type: string }
+        role: { type: string, enum: [citizen, volunteer, organizer] }
+        city: { type: string }
+        skills: { type: array, items: { type: string } }
+        points: { type: integer }
+        createdAt: { type: string, format: date-time }
+      required: [id, name, role, city, skills, points, createdAt]
+    UserInput:
+      type: object
+      properties:
+        name: { type: string, minLength: 1, maxLength: 80 }
+        role: { type: string, enum: [citizen, volunteer, organizer] }
+        city: { type: string, minLength: 1, maxLength: 100 }
+        skills: { type: array, items: { type: string } }
+      required: [name, role, city, skills]
+    UserUpdate:
+      type: object
+      properties:
+        name: { type: string, minLength: 1, maxLength: 80 }
+        role: { type: string, enum: [citizen, volunteer, organizer] }
+        city: { type: string, minLength: 1, maxLength: 100 }
+        skills: { type: array, items: { type: string } }
+    ImpactSummary:
+      type: object
+      properties:
+        points: { type: integer }
+        verifiedReports: { type: integer }
+        joinedProjects: { type: integer }
+        badges: { type: array, items: { type: string } }
+      required: [points, verifiedReports, joinedProjects, badges]
+    Report:
+      type: object
+      properties:
+        id: { type: string }
+        authorId: { type: [string, "null"] }
+        city: { type: string }
+        neighborhood: { type: string }
+        description: { type: string }
+        photoUrl: { type: [string, "null"] }
+        category: { type: [string, "null"] }
+        title: { type: [string, "null"] }
+        status: { type: string }
+        createdAt: { type: string, format: date-time }
+      required: [id, authorId, city, neighborhood, description, photoUrl, category, title, status, createdAt]
+    ReportInput:
+      type: object
+      properties:
+        authorId: { type: string }
+        city: { type: string, minLength: 1 }
+        neighborhood: { type: string, minLength: 1 }
+        description: { type: string, minLength: 1 }
+        image: { type: string, format: binary }
+        analysisJson: { type: string }
+      required: [city, neighborhood, description]
+    AnalyzeIssueInput:
+      type: object
+      properties:
+        image: { type: string, format: binary }
+        city: { type: string, minLength: 1 }
+        neighborhood: { type: string, minLength: 1 }
+        description: { type: string, minLength: 1 }
+      required: [image, city, neighborhood, description]
+    IssueAnalysis:
+      type: object
+      properties:
+        category: { type: string, enum: [Waste, Roads, Lighting, Public spaces, Buildings, Other] }
+        title: { type: string }
+        description: { type: string }
+        suggestedPriority: { type: string, enum: [low, medium, high] }
+        safetyFlags: { type: array, items: { type: string } }
+        suggestedActions: { type: array, items: { type: string } }
+        requiredSkills: { type: array, items: { type: string } }
+        suggestedMaterials: { type: array, items: { type: string } }
+        requiresProfessionalReview: { type: boolean }
+      required: [category, title, description, suggestedPriority, safetyFlags, suggestedActions, requiredSkills, suggestedMaterials, requiresProfessionalReview]
+    IssueAnalysisResponse:
+      type: object
+      properties:
+        model: { type: string }
+        analysis: { $ref: "#/components/schemas/IssueAnalysis" }
+      required: [model, analysis]
+    Project:
+      type: object
+      properties:
+        id: { type: string }
+        reportId: { type: [string, "null"] }
+        title: { type: string }
+        city: { type: string }
+        neighborhood: { type: string }
+        description: { type: string }
+        requiredSkills: { type: array, items: { type: string } }
+        volunteerLimit: { type: integer }
+        status: { type: string, enum: [pending, open, in_progress, completed, rejected] }
+        isSafe: { type: boolean }
+        joinedCount: { type: integer }
+        joinedByUser: { type: boolean }
+      required: [id, reportId, title, city, neighborhood, description, requiredSkills, volunteerLimit, status, isSafe, joinedCount, joinedByUser]
+    ProjectInput:
+      type: object
+      properties:
+        title: { type: string, minLength: 1, maxLength: 120 }
+        city: { type: string, minLength: 1 }
+        neighborhood: { type: string, minLength: 1 }
+        description: { type: string, minLength: 1 }
+        requiredSkills: { type: array, items: { type: string } }
+        volunteerLimit: { type: integer, minimum: 1, maximum: 100 }
+      required: [title, city, neighborhood, description, requiredSkills, volunteerLimit]
+    JoinProjectInput:
+      type: object
+      properties:
+        userId: { type: string }
+      required: [userId]
+    ProjectJoinResult:
+      type: object
+      properties:
+        success: { type: boolean }
+        membershipId: { type: string }
+      required: [success, membershipId]
+    MatchVolunteersInput:
+      type: object
+      properties:
+        projectId: { type: string }
+      required: [projectId]
+    VolunteerRecommendation:
+      type: object
+      properties:
+        userId: { type: string }
+        city: { type: string }
+        skills: { type: array, items: { type: string } }
+        reason: { type: string }
+      required: [userId, city, skills, reason]
+    VolunteerMatchResult:
+      type: object
+      properties:
+        source: { type: string, enum: [gemma, fallback] }
+        model: { type: [string, "null"] }
+        recommendations:
+          type: array
+          items: { $ref: "#/components/schemas/VolunteerRecommendation" }
+      required: [source, model, recommendations]
+    Membership:
+      type: object
+      properties:
+        id: { type: string }
+        projectId: { type: string }
+        projectTitle: { type: string }
+        userId: { type: string }
+        userName: { type: string }
+        city: { type: string }
+        status: { type: string, enum: [joined, confirmed] }
+      required: [id, projectId, projectTitle, userId, userName, city, status]
+    AdminSummary:
+      type: object
+      properties:
+        unverifiedReports:
+          type: array
+          items: { $ref: "#/components/schemas/Report" }
+        pendingProjects:
+          type: array
+          items: { $ref: "#/components/schemas/Project" }
+        joinedMemberships:
+          type: array
+          items: { $ref: "#/components/schemas/Membership" }
+      required: [unverifiedReports, pendingProjects, joinedMemberships]
+    AdminProjectStatusInput:
+      type: object
+      properties:
+        status: { type: string, enum: [open, rejected] }
+      required: [status]

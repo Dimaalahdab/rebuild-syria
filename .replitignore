@@ -3,3 +3,9 @@
 
 # No need to store the pnpm store twice.
 .local
+/artifacts/api-server/data/
+/artifacts/api-server/uploads/
+/screenshots/
+.env
+.env.*
+!.env.example

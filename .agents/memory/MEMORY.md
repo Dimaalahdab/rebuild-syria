@@ -1,0 +1,1 @@
+- [Gemma output budgeting](gemma-output-budget.md) — short generation checks need minimal thinking and enough output tokens; model availability alone is not success.
