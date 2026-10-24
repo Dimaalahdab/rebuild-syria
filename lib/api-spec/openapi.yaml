@@ -11,6 +11,19 @@ tags:
   - name: health
     description: Health operations
 paths:
+  /health:
+    get:
+      operationId: getApiHealth
+      tags: [health]
+      summary: Check API and database health
+      description: Returns API health and initialized database status
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
   /healthz:
     get:
       operationId: healthCheck

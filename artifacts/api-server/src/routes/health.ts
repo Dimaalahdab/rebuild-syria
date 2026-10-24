@@ -1,11 +1,20 @@
-import { Router, type IRouter } from "express";
+import { Router, type IRouter, type Request, type Response } from "express";
 import { HealthCheckResponse } from "@workspace/api-zod";
+import { checkDatabase } from "../lib/sqlite";
 
 const router: IRouter = Router();
 
-router.get("/healthz", (_req, res) => {
-  const data = HealthCheckResponse.parse({ status: "ok" });
-  res.json(data);
-});
+const healthCheck = (_req: Request, res: Response) => {
+  try {
+    checkDatabase();
+    const data = HealthCheckResponse.parse({ status: "ok" });
+    res.json(data);
+  } catch {
+    res.status(503).json({ status: "error" });
+  }
+};
+
+router.get("/health", healthCheck);
+router.get("/healthz", healthCheck);
 
 export default router;

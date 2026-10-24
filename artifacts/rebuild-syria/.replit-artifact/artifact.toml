@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "Rebuild Syria"
+description = "An Arabic-first community platform where people report neighborhood issues, organize safe volunteer projects, and track local impact."
+version = "1.0.0"
+id = "artifacts/rebuild-syria"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 22010
+
+[services.development]
+run = "pnpm --filter @workspace/rebuild-syria run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/rebuild-syria", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/rebuild-syria/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "22010"
+BASE_PATH = "/"
